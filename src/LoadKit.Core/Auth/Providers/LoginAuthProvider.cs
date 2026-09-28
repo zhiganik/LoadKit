@@ -140,7 +140,7 @@ public sealed class LoginAuthProvider : TokenAuthProviderBase
     internal static string Truncate(string text)
     {
         var singleLine = text.ReplaceLineEndings(" ").Trim();
-        return singleLine.Length <= MaxErrorBodyLength ? singleLine : string.Concat(singleLine.AsSpan(0, MaxErrorBodyLength), "…");
+        return singleLine.Length <= MaxErrorBodyLength ? singleLine : string.Concat(singleLine.AsSpan(0, MaxErrorBodyLength), "...");
     }
 
     private static string DescribeShape(JsonElement root)

@@ -24,7 +24,7 @@ public sealed class ScenarioCheckerTests
         Assert.Equal(["/health", "/orders"], sentPaths);
         Assert.Equal([("health", 200, true), ("orders", 401, false)], results.Select(result => (result.Name, result.StatusCode, result.IsExpected)));
         Assert.StartsWith("echo *** xxx", results[0].BodyStart, StringComparison.Ordinal);
-        Assert.EndsWith("…", results[0].BodyStart, StringComparison.Ordinal);
+        Assert.EndsWith("...", results[0].BodyStart, StringComparison.Ordinal);
     }
 
     [Fact]

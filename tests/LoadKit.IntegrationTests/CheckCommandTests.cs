@@ -34,10 +34,10 @@ public sealed class CheckCommandTests(TargetApiFixture targetApi) : IClassFixtur
         Assert.True(result.ExitCode == ExitSuccess, result.ToString());
         Assert.Contains($"ok baseUrl: {targetApi.BaseUrl} is reachable", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("ok auth: login: token acquired, expires in 10 s", result.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains($"ok secure GET {targetApi.BaseUrl}/secure → 200 in", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains($"ok secure GET {targetApi.BaseUrl}/secure -> 200 in", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("""{"result":"secure"}""", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("UNEXPECTED fail GET", result.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("→ 500 in", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("-> 500 in", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("1 of 2 request(s) did not return an expected status.", result.StandardOutput, StringComparison.Ordinal);
         Assert.DoesNotContain("dev-password", result.StandardOutput, StringComparison.Ordinal);
     }

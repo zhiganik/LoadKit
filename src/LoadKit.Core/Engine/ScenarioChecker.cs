@@ -84,6 +84,6 @@ public sealed class ScenarioChecker(HttpClient httpClient, TimeProvider timeProv
 
     private static string StartOf(string body)
     {
-        return body.Length <= MaxBodyStartLength ? body : string.Concat(body.AsSpan(0, MaxBodyStartLength), "…");
+        return body.Length <= MaxBodyStartLength ? body : string.Concat(body.AsSpan(0, MaxBodyStartLength), "...");
     }
 }

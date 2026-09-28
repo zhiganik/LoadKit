@@ -39,7 +39,7 @@ internal static class CheckRenderer
             ? $"{result.StatusCode} in {milliseconds} ms"
             : $"no response ({result.Error}) after {milliseconds} ms";
         console.MarkupLine(
-            $"{verdict} [bold]{Markup.Escape(result.Name)}[/] {result.Method} {Markup.Escape(result.Url)} → {Markup.Escape(outcome)}");
+            $"{verdict} [bold]{Markup.Escape(result.Name)}[/] {result.Method} {Markup.Escape(result.Url)} -> {Markup.Escape(outcome)}");
 
         var detail = result.ErrorMessage ?? (result.BodyStart.Length == 0 ? "(empty body)" : result.BodyStart);
         console.MarkupLine($"    {Markup.Escape(ToSingleLine(detail))}");
@@ -48,6 +48,6 @@ internal static class CheckRenderer
     private static string ToSingleLine(string text)
     {
         var singleLine = string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        return singleLine.Length <= MaxBodyLineLength ? singleLine : string.Concat(singleLine.AsSpan(0, MaxBodyLineLength), "…");
+        return singleLine.Length <= MaxBodyLineLength ? singleLine : string.Concat(singleLine.AsSpan(0, MaxBodyLineLength), "...");
     }
 }
