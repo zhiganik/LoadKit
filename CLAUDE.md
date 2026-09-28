@@ -26,8 +26,8 @@ dotnet run --project src/LoadKit.Cli -- validate samples/scenarios/smoke.json
 dotnet run --project src/LoadKit.Cli -- run samples/scenarios/smoke.json
 ```
 
-Before Phase 0 of `docs/PLAN.md` is done, the solution may not exist yet and these commands will fail.
-Check `PLAN.md` first rather than assuming the code in `docs/architecture/` exists.
+`docs/architecture/` describes the target design; check `docs/PLAN.md` for which parts are implemented.
+TargetApi dev credentials for sample scenarios: `samples/scenarios/.env.example` (copy to `.env`).
 
 ## Non-obvious things
 

@@ -18,7 +18,7 @@ configured, is not validated, or is unknown to user agents. Architecture: `docs/
 2. **Config model** `<Name>AuthOptions` (record) + mapping in `AuthOptionsParser`.
 3. **Registration** in `AuthProviderFactory`: `"<type>" → provider`.
 4. **Schema**: new `oneOf` branch for `auth` in `schemas/scenario.schema.json`.
-5. **User docs**: example in `ai/skills/loadtest/SCENARIO_REFERENCE.md` (Авторизация) and a row
+5. **User docs**: example in `ai/skills/loadtest/SCENARIO_REFERENCE.md` (Authentication) and a row
    in the "Choosing auth" table of `ai/skills/loadtest/SKILL.md`; section in `docs/user/GETTING_STARTED.md`.
 6. **Init**: add the option to the interactive `loadtest init` auth question and `--auth` flag.
 7. **Tests**:

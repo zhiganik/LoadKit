@@ -24,13 +24,14 @@ If a day runs over, the buffer comes from phase 4 (histogram and CPU warnings mo
 ## Phase 0. Repository foundation — 0.5 day
 
 - [x] Documentation, `AGENTS.md`, `CLAUDE.md`, skills, `.gitignore`, `.gitattributes`.
-- [ ] `LoadKit.sln`: `src/LoadKit.Core`, `src/LoadKit.Cli`, `samples/TargetApi`,
+- [x] `LoadKit.slnx`: `src/LoadKit.Core`, `src/LoadKit.Cli`, `samples/TargetApi`,
   `tests/LoadKit.Core.Tests`, `tests/LoadKit.IntegrationTests`.
-- [ ] `Directory.Build.props` (net10.0, nullable, warnings as errors), `Directory.Packages.props`, `.editorconfig`.
-- [ ] `samples/TargetApi` on `http://localhost:5080` with all endpoints from `docs/standards/TESTING.md`,
+- [x] `Directory.Build.props` (net10.0, nullable, warnings as errors), `Directory.Packages.props`, `.editorconfig`,
+  `global.json`.
+- [x] `samples/TargetApi` on `http://localhost:5080` with all endpoints from `docs/standards/TESTING.md`,
   including `/secure`, `/auth/login`, `/oauth2/token`.
-- [ ] `samples/scenarios/`: `smoke.json`, `mix.json`, `secure-bearer.json`, `secure-login.json`.
-- [ ] CI (`.github/workflows/ci.yml`): build, format, test.
+- [x] `samples/scenarios/`: `smoke.json`, `mix.json`, `secure-bearer.json`, `secure-login.json`, `.env.example`.
+- [x] CI (`.github/workflows/ci.yml`): build, format, test. (Green run pending the first push.)
 
 **Done when:** CI is green; `curl localhost:5080/health` → 200; `/secure` without a token → 401.
 
