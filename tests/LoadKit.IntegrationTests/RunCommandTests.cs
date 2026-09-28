@@ -163,14 +163,42 @@ public sealed class RunCommandTests(TargetApiFixture targetApi) : IClassFixture<
         Assert.Contains("concurrency 3, 1 s", result.StandardOutput, StringComparison.Ordinal);
     }
 
-    // Until phase 3 implements token providers, `run` reports them as a preflight failure.
     [Fact]
-    public async Task UnsupportedAuthType_ExitsThree()
+    public async Task OAuth2ClientCredentials_AgainstSecure_ExitsZero()
     {
-        var scenarioPath = WriteScenario("azure.json", $$"""
+        File.WriteAllText(Path.Combine(_directory, ".env"), "LOADKIT_IT_CLIENT_SECRET=dev-client-secret\n");
+        var scenarioPath = WriteScenario("oauth2.json", $$"""
             {
-              "version": 1, "name": "azure", "baseUrl": "{{BaseUrl}}",
-              "auth": { "type": "azureIdentity", "scope": "api://target/.default" },
+              "version": 1, "name": "oauth2", "baseUrl": "{{BaseUrl}}",
+              "auth": {
+                "type": "oauth2ClientCredentials", "tokenUrl": "{{BaseUrl}}/oauth2/token",
+                "clientId": "loadkit-client", "clientSecret": "${env:LOADKIT_IT_CLIENT_SECRET}", "scope": "api://target/.default"
+              },
+              "load": { "concurrency": 2, "totalRequests": 20 },
+              "requests": [ { "name": "secure", "method": "GET", "path": "/secure", "expect": { "status": [200] } } ],
+              "thresholds": { "errorRatePercent": 0 }
+            }
+            """);
+
+        var result = await RunAsync(scenarioPath);
+
+        Assert.True(result.ExitCode == ExitSuccess, result.ToString());
+        Assert.Contains("ok auth: oauth2ClientCredentials: token acquired, expires in 10 s", result.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("dev-client-secret", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WrongLoginPassword_FailsPreflight_ExitsThree()
+    {
+        File.WriteAllText(Path.Combine(_directory, ".env"), "LOADKIT_IT_USER=loadtest@example.com\nLOADKIT_IT_PASSWORD=wrong-password\n");
+        var scenarioPath = WriteScenario("login.json", $$"""
+            {
+              "version": 1, "name": "login", "baseUrl": "{{BaseUrl}}",
+              "auth": {
+                "type": "login",
+                "request": { "method": "POST", "path": "/auth/login", "body": { "email": "${env:LOADKIT_IT_USER}", "password": "${env:LOADKIT_IT_PASSWORD}" } },
+                "tokenPath": "$.accessToken", "expiresInPath": "$.expiresIn"
+              },
               "load": { "concurrency": 1, "totalRequests": 1 },
               "requests": [ { "name": "secure", "method": "GET", "path": "/secure", "expect": { "status": [200] } } ]
             }
@@ -179,7 +207,26 @@ public sealed class RunCommandTests(TargetApiFixture targetApi) : IClassFixture<
         var result = await RunAsync(scenarioPath);
 
         Assert.True(result.ExitCode == ExitPreflightFailed, result.ToString());
-        Assert.Contains("preflight failed", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("preflight failed auth: login: login request POST /auth/login returned 401", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("hint: check the credentials in .env", result.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("Running", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UnreachableBaseUrl_FailsPreflight_ExitsThree()
+    {
+        var scenarioPath = WriteScenario("down.json", """
+            {
+              "version": 1, "name": "down", "baseUrl": "http://127.0.0.1:1",
+              "load": { "concurrency": 1, "totalRequests": 1 },
+              "requests": [ { "name": "health", "method": "GET", "path": "/health", "expect": { "status": [200] } } ]
+            }
+            """);
+
+        var result = await RunAsync(scenarioPath);
+
+        Assert.True(result.ExitCode == ExitPreflightFailed, result.ToString());
+        Assert.Contains("preflight failed baseUrl: http://127.0.0.1:1 is not reachable", result.StandardOutput, StringComparison.Ordinal);
     }
 
     public void Dispose()
@@ -187,7 +234,7 @@ public sealed class RunCommandTests(TargetApiFixture targetApi) : IClassFixture<
         Directory.Delete(_directory, recursive: true);
     }
 
-    private string BaseUrl => targetApi.BaseAddress.GetLeftPart(UriPartial.Authority);
+    private string BaseUrl => targetApi.BaseUrl;
 
     private string WriteScenario(string fileName, string json)
     {

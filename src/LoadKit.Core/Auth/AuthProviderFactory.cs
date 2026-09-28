@@ -1,20 +1,35 @@
+using Azure.Core;
 using LoadKit.Core.Auth.Providers;
 using LoadKit.Core.Scenarios.Model;
 
 namespace LoadKit.Core.Auth;
 
-/// <summary>Creates the provider for <c>auth.type</c>; null when the scenario has no <c>auth</c>.</summary>
-public static class AuthProviderFactory
+/// <summary>Creates the provider for <c>auth.type</c>. The provider is not initialized; preflight does that.</summary>
+/// <param name="tokenHttpClient">Client for login / token endpoints; must not go through <see cref="AuthHandler"/>.</param>
+/// <param name="createCredential">Credential for <c>azureIdentity</c>; tests pass a fake.</param>
+public sealed class AuthProviderFactory(
+    HttpClient tokenHttpClient,
+    TimeProvider timeProvider,
+    SecretMasker secretMasker,
+    Func<AzureIdentityAuth, TokenCredential> createCredential)
 {
-    /// <exception cref="NotSupportedException">The auth type is not implemented yet (see docs/PLAN.md, phase 3).</exception>
-    public static IAuthProvider? Create(AuthOptions? authOptions)
+    public AuthProviderFactory(HttpClient tokenHttpClient, TimeProvider timeProvider, SecretMasker secretMasker)
+        : this(tokenHttpClient, timeProvider, secretMasker, AzureIdentityAuthProvider.CreateCredential)
     {
-        return authOptions switch
+    }
+
+    /// <returns>Null when the scenario has no <c>auth</c>.</returns>
+    public IAuthProvider? Create(Scenario scenario)
+    {
+        return scenario.Auth switch
         {
             null => null,
             BearerAuth bearer => new BearerAuthProvider(bearer),
             ApiKeyAuth apiKey => new ApiKeyAuthProvider(apiKey),
-            _ => throw new NotSupportedException($"auth type '{authOptions.Type}' is not supported by run yet"),
+            LoginAuth login => new LoginAuthProvider(login, scenario.BaseUrl, tokenHttpClient, timeProvider, secretMasker),
+            OAuth2ClientCredentialsAuth oauth2 => new OAuth2ClientCredentialsAuthProvider(oauth2, tokenHttpClient, timeProvider, secretMasker),
+            AzureIdentityAuth azureIdentity => new AzureIdentityAuthProvider(azureIdentity, createCredential(azureIdentity), timeProvider, secretMasker),
+            _ => throw new InvalidOperationException($"No provider for auth type '{scenario.Auth.Type}'."),
         };
     }
 }

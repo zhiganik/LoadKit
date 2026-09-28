@@ -25,27 +25,48 @@ public sealed class SecretMasker
         "api-key",
         "x-api-key");
 
-    private readonly string[] _secretsLongestFirst;
+    private readonly HashSet<string> _secrets = new(StringComparer.Ordinal);
+    private readonly Lock _secretsLock = new();
     private readonly HashSet<string> _sensitiveHeaders;
+    private volatile string[] _secretsLongestFirst = [];
 
     public SecretMasker(IEnumerable<string> secretValues, IEnumerable<string> sensitiveHeaderNames)
     {
-        var secrets = new HashSet<string>(StringComparer.Ordinal);
         foreach (var secret in secretValues)
         {
-            if (secret.Length >= MinimumSecretLength)
-            {
-                secrets.Add(secret);
-                secrets.Add(Uri.EscapeDataString(secret));
-            }
+            AddSecret(secret);
         }
 
-        _secretsLongestFirst = [.. secrets.OrderByDescending(secret => secret.Length)];
         _sensitiveHeaders = new HashSet<string>(DefaultSensitiveHeaders, StringComparer.OrdinalIgnoreCase);
         _sensitiveHeaders.UnionWith(sensitiveHeaderNames);
     }
 
-    public static SecretMasker None { get; } = new([], []);
+    /// <summary>
+    /// Registers a secret that appears at runtime, such as an acquired access token. Not for the hot path:
+    /// called once per token acquisition.
+    /// </summary>
+    public void AddSecret(string secret)
+    {
+        if (secret.Length < MinimumSecretLength)
+        {
+            return;
+        }
+
+        lock (_secretsLock)
+        {
+            var added = _secrets.Add(secret) | _secrets.Add(Uri.EscapeDataString(secret));
+            if (added)
+            {
+                _secretsLongestFirst = [.. _secrets.OrderByDescending(value => value.Length)];
+            }
+        }
+    }
+
+    /// <summary>A masker with only the default sensitive headers; secrets can still be added at runtime.</summary>
+    public static SecretMasker CreateEmpty()
+    {
+        return new SecretMasker([], []);
+    }
 
     /// <summary>
     /// Secrets of a loaded scenario: every value in <c>auth</c> that can carry a credential, and the values of

@@ -103,12 +103,28 @@ public sealed class AuthProviderTests
         Assert.Equal(1, provider.StaleSignalCount);
     }
 
-    [Fact]
-    public void Factory_CreatesProviderForType()
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("""{ "type": "bearer", "token": "${env:SECRET}" }""", typeof(BearerAuthProvider))]
+    [InlineData("""{ "type": "apiKey", "header": "x-api-key", "value": "${env:SECRET}" }""", typeof(ApiKeyAuthProvider))]
+    [InlineData("""{ "type": "login", "request": { "method": "POST", "path": "/auth/login", "body": { "p": "${env:SECRET}" } }, "tokenPath": "$.accessToken" }""", typeof(LoginAuthProvider))]
+    [InlineData("""{ "type": "oauth2ClientCredentials", "tokenUrl": "http://localhost:5080/oauth2/token", "clientId": "c", "clientSecret": "${env:SECRET}", "scope": "s" }""", typeof(OAuth2ClientCredentialsAuthProvider))]
+    [InlineData("""{ "type": "azureIdentity", "scope": "api://x/.default" }""", typeof(AzureIdentityAuthProvider))]
+    public void Factory_CreatesProviderForType(string? auth, Type? expectedType)
     {
-        Assert.Null(AuthProviderFactory.Create(null));
-        Assert.IsType<BearerAuthProvider>(AuthProviderFactory.Create(new BearerAuth("t", "Authorization", "Bearer {token}")));
-        Assert.IsType<ApiKeyAuthProvider>(AuthProviderFactory.Create(new ApiKeyAuth("k", "x-api-key", null)));
-        Assert.Throws<NotSupportedException>(() => AuthProviderFactory.Create(new AzureIdentityAuth("api://x/.default", "azureCli")));
+        var authField = auth is null ? string.Empty : $""" "auth": {auth},""";
+        var scenario = TestScenarios.Load($$"""
+            {
+              "version": 1, "name": "t", "baseUrl": "http://localhost:5080",{{authField}}
+              "load": { "concurrency": 1, "totalRequests": 1 },
+              "requests": [ { "name": "r", "method": "GET", "path": "/", "expect": { "status": [200] } } ]
+            }
+            """, new Dictionary<string, string> { ["SECRET"] = "secret-value" }).Scenario!.Scenario;
+        using var tokenHttpClient = new HttpClient(FakeHttpMessageHandler.Returning(HttpStatusCode.OK));
+        var factory = new AuthProviderFactory(tokenHttpClient, TimeProvider.System, SecretMasker.CreateEmpty(), _ => new FakeTokenCredential());
+
+        using var provider = factory.Create(scenario);
+
+        Assert.Equal(expectedType, provider?.GetType());
     }
 }

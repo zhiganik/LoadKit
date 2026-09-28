@@ -34,4 +34,9 @@ public sealed class BearerAuthProvider : IAuthProvider
     {
         Interlocked.Increment(ref _staleSignalCount);
     }
+
+    public void Dispose()
+    {
+        // Nothing to release: the token is static.
+    }
 }

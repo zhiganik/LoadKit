@@ -16,6 +16,17 @@ public sealed class SecretMaskerTests
     }
 
     [Fact]
+    public void AddSecret_MasksValuesAcquiredAtRuntime()
+    {
+        var masker = SecretMasker.CreateEmpty();
+
+        masker.AddSecret("runtime-token");
+
+        Assert.Equal("Bearer ***", masker.MaskText("Bearer runtime-token"));
+        Assert.Equal("Bearer runtime-token", SecretMasker.CreateEmpty().MaskText("Bearer runtime-token"));
+    }
+
+    [Fact]
     public void MaskText_IgnoresValuesShorterThanMinimum()
     {
         var masker = new SecretMasker(["abc"], []);

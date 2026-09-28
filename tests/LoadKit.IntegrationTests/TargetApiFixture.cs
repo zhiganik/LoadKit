@@ -9,12 +9,27 @@ namespace LoadKit.IntegrationTests;
 /// <summary>
 /// Runs <c>samples/TargetApi</c> on real Kestrel with a random free port.
 /// TestServer does not fit: the CLI makes real network calls.
+/// Not sealed on purpose: variants pass extra configuration (see <see cref="ShortTokenLifetimeTargetApiFixture"/>).
 /// </summary>
-public sealed class TargetApiFixture : IAsyncLifetime
+public class TargetApiFixture : IAsyncLifetime
 {
+    private readonly string[] _extraArguments;
     private WebApplication? _application;
 
+    public TargetApiFixture()
+        : this([])
+    {
+    }
+
+    protected TargetApiFixture(string[] extraArguments)
+    {
+        _extraArguments = extraArguments;
+    }
+
     public Uri BaseAddress { get; private set; } = null!;
+
+    /// <summary>Base URL without a trailing slash, for scenario files.</summary>
+    public string BaseUrl => BaseAddress.GetLeftPart(UriPartial.Authority);
 
     public async ValueTask InitializeAsync()
     {
@@ -23,6 +38,7 @@ public sealed class TargetApiFixture : IAsyncLifetime
             "--urls=http://127.0.0.1:0",
             "--environment=Development",
             "--TargetApi:FailProbability=0.5",
+            .. _extraArguments,
         ]);
         await _application.StartAsync();
 
@@ -42,5 +58,7 @@ public sealed class TargetApiFixture : IAsyncLifetime
             await _application.StopAsync();
             await _application.DisposeAsync();
         }
+
+        GC.SuppressFinalize(this);
     }
 }

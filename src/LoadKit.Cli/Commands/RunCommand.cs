@@ -3,7 +3,6 @@ using LoadKit.Cli.Rendering;
 using LoadKit.Core.Auth;
 using LoadKit.Core.Engine;
 using LoadKit.Core.Scenarios;
-using LoadKit.Core.Scenarios.Model;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -70,79 +69,54 @@ internal sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         var secretMasker = SecretMasker.FromScenario(scenario);
         var maskedBaseUrl = secretMasker.MaskText(scenario.BaseUrl);
 
-        if (!LocalAddress.IsLocal(compiledScenario.BaseUri) && !settings.Yes && !ConfirmRemoteUrl(console, maskedBaseUrl, options))
+        if (!ScenarioCommandSteps.ConfirmRemoteUrl(console, compiledScenario, maskedBaseUrl, RunPlanText.Describe(options), settings.Yes))
         {
             return ExitCodes.ConfirmationRequired;
         }
 
-        var authProvider = await InitializeAuthAsync(console, scenario.Auth, secretMasker);
-        if (authProvider.Failed)
+        // Token providers refresh through this client during the run, so it lives until the end.
+        using var unauthenticatedHttpClient = HttpPipelineFactory.CreateUnauthenticated();
+        var (preflightSucceeded, authProvider) = await ScenarioCommandSteps.RunPreflightAsync(
+            console, compiledScenario, unauthenticatedHttpClient, secretMasker);
+        if (!preflightSucceeded)
         {
             return ExitCodes.PreflightFailed;
         }
 
-        using var httpClient = HttpPipelineFactory.Create(options.Concurrency, authProvider.Provider);
-        var runner = new LoadRunner(httpClient, TimeProvider.System, Random.Shared, secretMasker);
-        var tag = runId is null ? string.Empty : $", {RunOptions.RunIdQueryParameter}={runId}";
-        console.MarkupLine(
-            $"Running [bold]{Markup.Escape(scenario.Name)}[/] against {Markup.Escape(maskedBaseUrl)}: {RunPlanText.Describe(options)}{tag}");
-
-        var result = await RunUntilDoneOrCancelledAsync(console, runner, compiledScenario, options);
-        RunSummaryRenderer.Render(console, result, usesAuth: scenario.Auth is not null);
-
-        if (result.Interrupted)
+        using (authProvider)
         {
-            return ExitCodes.Interrupted;
-        }
+            using var httpClient = HttpPipelineFactory.Create(options.Concurrency, authProvider);
+            var runner = new LoadRunner(httpClient, TimeProvider.System, Random.Shared, secretMasker);
+            var tag = runId is null ? string.Empty : $", {RunOptions.RunIdQueryParameter}={runId}";
+            console.MarkupLine(
+                $"Running [bold]{Markup.Escape(scenario.Name)}[/] against {Markup.Escape(maskedBaseUrl)}: {RunPlanText.Describe(options)}{tag}");
 
-        return result.ThresholdsPassed ? ExitCodes.Success : ExitCodes.ThresholdsFailed;
+            var result = await RunUntilDoneOrCancelledAsync(console, runner, compiledScenario, options);
+            RunSummaryRenderer.Render(console, result, usesAuth: scenario.Auth is not null);
+            RenderTokenRefreshFailures(console, authProvider);
+
+            if (result.Interrupted)
+            {
+                return ExitCodes.Interrupted;
+            }
+
+            return result.ThresholdsPassed ? ExitCodes.Success : ExitCodes.ThresholdsFailed;
+        }
     }
 
     private static bool IsWorthShowing(ValidationIssue issue)
     {
-        // remote-url info is replaced by the confirmation below.
+        // remote-url info is replaced by the confirmation step.
         return issue.Severity != ValidationSeverity.Info;
     }
 
-    private static bool ConfirmRemoteUrl(IAnsiConsole console, string maskedBaseUrl, RunOptions options)
+    private static void RenderTokenRefreshFailures(IAnsiConsole console, IAuthProvider? authProvider)
     {
-        var plan = RunPlanText.Describe(options);
-        if (!ConsoleFactory.IsInteractiveTerminal)
+        if (authProvider is TokenAuthProviderBase { RefreshFailureCount: > 0 } tokenProvider)
         {
-            console.MarkupLine($"[red]confirmation required:[/] {Markup.Escape(maskedBaseUrl)} is not localhost ({plan})");
-            console.MarkupLine("  get confirmation from the owner of the API and retry with --yes");
-            return false;
-        }
-
-        if (console.Confirm($"Load {Markup.Escape(maskedBaseUrl)}? {plan}", defaultValue: false))
-        {
-            return true;
-        }
-
-        console.MarkupLine("Cancelled: nothing was sent.");
-        return false;
-    }
-
-    private static async Task<(IAuthProvider? Provider, bool Failed)> InitializeAuthAsync(
-        IAnsiConsole console,
-        AuthOptions? authOptions,
-        SecretMasker secretMasker)
-    {
-        try
-        {
-            var provider = AuthProviderFactory.Create(authOptions);
-            if (provider is not null)
-            {
-                await provider.InitializeAsync(CancellationToken.None);
-            }
-
-            return (provider, false);
-        }
-        catch (Exception exception)
-        {
-            console.MarkupLine($"[red]preflight failed[/] [bold]auth[/] ({authOptions?.Type})");
-            console.MarkupLine($"  {Markup.Escape(secretMasker.MaskText(exception.Message))}");
-            return (null, true);
+            console.MarkupLine(
+                $"[yellow]warning:[/] token refresh failed {tokenProvider.RefreshFailureCount} time(s); last error: "
+                + Markup.Escape(tokenProvider.LastRefreshError ?? "unknown"));
         }
     }
 

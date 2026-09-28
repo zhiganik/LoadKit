@@ -194,7 +194,7 @@ public sealed class LoadRunnerTests
         IProgress<RunProgress>? progress = null)
     {
         using var httpClient = new HttpClient(handler, disposeHandler: false) { Timeout = Timeout.InfiniteTimeSpan };
-        var runner = new LoadRunner(httpClient, TimeProvider.System, Random.Shared, secretMasker ?? SecretMasker.None);
+        var runner = new LoadRunner(httpClient, TimeProvider.System, Random.Shared, secretMasker ?? SecretMasker.CreateEmpty());
         var options = RunOptions.FromLoad(scenario.Scenario.Load, runId: null);
         return await runner.RunAsync(scenario, options, progress, cancellationToken);
     }

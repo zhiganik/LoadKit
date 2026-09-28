@@ -52,4 +52,9 @@ public sealed class ApiKeyAuthProvider : IAuthProvider
     {
         Interlocked.Increment(ref _staleSignalCount);
     }
+
+    public void Dispose()
+    {
+        // Nothing to release: the key is static.
+    }
 }
