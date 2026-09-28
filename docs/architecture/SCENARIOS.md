@@ -62,7 +62,7 @@ and the model records describe exactly the same fields and required flags.
 | `unknown-field` | field not in the format; hint suggests a close name |
 | `invalid-type` | wrong JSON type, including `null` |
 | `required-field` | required field is missing |
-| `invalid-value` | right type, wrong value: method, path without `/`, non-http `baseUrl`/`tokenUrl`, numbers below minimum, status outside 100–599, `errorRatePercent` outside 0–100, unknown `auth.type`/`source`, empty `requests`, malformed `${env:` |
+| `invalid-value` | right type, wrong value: method, path without `/`, non-http `baseUrl`/`tokenUrl`, numbers below minimum, status outside 100–599, `errorRatePercent` outside 0–100, unknown `auth.type`/`source`, empty `requests`, malformed `${env:`, unsupported JSONPath in `tokenPath`/`expiresInPath` |
 
 `method` is accepted in any case and stored upper case; the IDE schema suggests upper case only.
 

@@ -90,6 +90,11 @@ Secrets only as `${env:NAME}`; the values live in `loadtests/.env`.
 | `oauth2ClientCredentials` | `tokenUrl`, `clientId`, `clientSecret`, `scope` | — |
 | `login` | `request`, `tokenPath` | `expiresInPath`, `header` (`Authorization`), `format` (`Bearer {token}`) |
 
+`login`: `tokenPath` and `expiresInPath` use a JSONPath subset — `$.accessToken`, `$.data.token`,
+`$.items[0].token`, `$['access-token']`. `expiresInPath` points to seconds (a number or a numeric string); without it the
+lifetime comes from the JWT `exp` claim, and a token with neither is treated as non-expiring (`check` warns).
+Tokens are refreshed in the background at ~80% of their lifetime.
+
 Prefer passing `apiKey` in a header: a value in `query` ends up in the URL, and the URL is written to server logs.
 
 <!-- fragment:auth -->
@@ -256,5 +261,6 @@ Expected 500s are listed in `expect`, so the report shows only unexpected errors
 | `apiKey: specify exactly one of header or query` | keep only one |
 | `requests[i]: use either body or bodyRaw, not both` | keep only one |
 | `requests[i].path must start with '/'` | paths are relative to `baseUrl`: `"/api/orders"` |
+| `auth.tokenPath '...' is not a supported JSONPath` | write it like `$.accessToken` or `$.data.token` |
 
 Every error names a code (for example `body-required`) and a JSON path; `loadtest validate` prints a hint for each.

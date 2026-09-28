@@ -323,6 +323,8 @@ internal sealed class SemanticValidator(ICollection<ValidationIssue> issues, Tem
                     ValidateBody(loginRequest, "auth.request", method, isLoginRequest: true);
                 }
 
+                ValidateJsonPath(auth!, "tokenPath");
+                ValidateJsonPath(auth!, "expiresInPath");
                 break;
         }
     }
@@ -346,6 +348,18 @@ internal sealed class SemanticValidator(ICollection<ValidationIssue> issues, Tem
                 "auth.query",
                 "apiKey is sent in the query string",
                 "the key ends up in URLs and server logs; prefer \"header\" when the API supports it"));
+        }
+    }
+
+    private void ValidateJsonPath(JsonObject auth, string fieldName)
+    {
+        if (JsonNodeReader.TryGetString(auth, fieldName, out var jsonPath) && !JsonPathQuery.TryParse(jsonPath, out _, out var error))
+        {
+            issues.Add(ValidationIssue.Error(
+                ValidationCodes.InvalidValue,
+                $"auth.{fieldName}",
+                $"auth.{fieldName} '{jsonPath}' is not a supported JSONPath: {error}",
+                "use $.name, $.a.b, $.items[0] or $['name-with-dash']"));
         }
     }
 
