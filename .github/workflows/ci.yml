@@ -26,3 +26,9 @@ jobs:
 
       - name: Test
         run: dotnet test --no-build
+
+      - name: Validate sample scenarios
+        run: |
+          for scenario in samples/scenarios/*.json; do
+            dotnet run --project src/LoadKit.Cli --no-build -- validate "$scenario" --env-file samples/scenarios/.env.example
+          done

@@ -1,0 +1,44 @@
+using LoadKit.Core.Scenarios;
+using Spectre.Console;
+
+namespace LoadKit.Cli.Rendering;
+
+/// <summary>Prints validation issues: severity, JSON path, code, message and hint.</summary>
+internal static class ValidationRenderer
+{
+    public static void Render(IAnsiConsole console, string scenarioFilePath, ScenarioLoadResult result)
+    {
+        foreach (var issue in result.Issues)
+        {
+            RenderIssue(console, issue);
+        }
+
+        var escapedPath = Markup.Escape(scenarioFilePath);
+        if (result.Scenario is { } scenario)
+        {
+            console.MarkupLine(
+                $"[green]Valid:[/] {escapedPath} ({scenario.Requests.Count} request(s), {result.WarningCount} warning(s))");
+        }
+        else
+        {
+            console.MarkupLine($"[red]Invalid:[/] {escapedPath} ({result.ErrorCount} error(s), {result.WarningCount} warning(s))");
+        }
+    }
+
+    private static void RenderIssue(IAnsiConsole console, ValidationIssue issue)
+    {
+        var (label, color) = issue.Severity switch
+        {
+            ValidationSeverity.Error => ("error", "red"),
+            ValidationSeverity.Warning => ("warning", "yellow"),
+            _ => ("info", "blue"),
+        };
+
+        console.MarkupLine($"[{color}]{label}[/] [bold]{Markup.Escape(issue.Path)}[/] ({issue.Code})");
+        console.MarkupLine($"  {Markup.Escape(issue.Message)}");
+        if (issue.Hint is not null)
+        {
+            console.MarkupLine($"  [grey]hint:[/] {Markup.Escape(issue.Hint)}");
+        }
+    }
+}

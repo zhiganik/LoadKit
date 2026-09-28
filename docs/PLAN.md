@@ -37,15 +37,15 @@ If a day runs over, the buffer comes from phase 4 (histogram and CPU warnings mo
 
 ## Phase 1. Scenarios and `validate` — 0.5 day
 
-- [ ] Scenario model (records), `ScenarioLoader`, `EnvFileLoader`.
-- [ ] `ScenarioValidator` on top of `JsonDocument`: unknown fields, types, required fields and all
+- [x] Scenario model (records), `ScenarioLoader`, `EnvFileLoader`.
+- [x] `ScenarioValidator` on top of a `JsonNode` tree: unknown fields, types, required fields and all
   semantic rules from `docs/architecture/SCENARIOS.md`. Collects **all** errors with JSON paths.
-- [ ] `secret-literal` check runs **before** `${env:}` substitution (after substitution the secret is already in the value).
-- [ ] `${env:}` substitution, `TemplateCompiler` and template generators.
-- [ ] `schemas/scenario.schema.json` — only for IDE autocompletion; a test that the schema matches the model.
-- [ ] `validate` command: list of errors, exit 2.
-- [ ] Docs tests: full scenarios and fragments (`<!-- fragment:auth -->`) from `SCENARIO_REFERENCE.md`,
-  `samples/scenarios/*`.
+- [x] `secret-literal` check runs **before** `${env:}` substitution (after substitution the secret is already in the value).
+- [x] `${env:}` substitution, `TemplateCompiler` and template generators.
+- [x] `schemas/scenario.schema.json` — only for IDE autocompletion; a test that the schema matches the model.
+- [x] `validate` command: list of errors, exit 2; `--env-file`; plain output when redirected.
+- [x] Docs tests: full scenarios and fragments (`<!-- fragment:auth -->`) from `SCENARIO_REFERENCE.md`,
+  `docs/user/*`, `README.md`, `samples/scenarios/*`.
 
 **Done when:** a scenario with three different errors shows all three with paths and hints, exit 2;
 all documentation examples pass.

@@ -18,6 +18,13 @@ Creates a scenario, a `.env` template and `.gitignore` entries.
 ## `loadtest validate <file>`
 
 Checks the format and variables, sends nothing. Exit code `0` or `2`.
+Prints every issue with its JSON path, code and a hint; warnings and info do not change the exit code.
+
+| Flag | Description |
+|---|---|
+| `--env-file <path>` | path to `.env` (default: `.env` next to the scenario, then in its parent folder) |
+
+When output is redirected (CI, scripts, AI agents), all commands print plain text without colors or line wrapping.
 
 ## `loadtest check <file>`
 
