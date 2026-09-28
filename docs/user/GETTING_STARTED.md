@@ -1,103 +1,103 @@
-# Первый запуск за 5 минут
+# First run in 5 minutes
 
-> Статус: draft
+> Status: draft
 
-## 1. Установка
+## 1. Install
 
 ```bash
 dotnet tool install -g LoadKit
 loadtest --version
 ```
 
-## 2. Создать сценарий
+## 2. Create a scenario
 
 ```bash
 loadtest init loadtests/scenarios/my-api.json
 ```
 
-`init` задаст 2–3 вопроса: адрес API и как он защищён. Результат:
+`init` asks 2–3 questions: the API address and how it is protected. Result:
 
 ```
 loadtests/
-  scenarios/my-api.json   ← сценарий
-  scenario.schema.json    ← автодополнение в IDE
-  .env                    ← нужные переменные (пустые), в .gitignore
-  reports/                ← в .gitignore
+  scenarios/my-api.json   ← scenario
+  scenario.schema.json    ← IDE autocompletion
+  .env                    ← required variables (empty), in .gitignore
+  reports/                ← in .gitignore
 ```
 
-## 3. Авторизация: откуда взять токен
+## 3. Auth: where to get the token
 
-LoadKit ведёт себя как Postman: прикладывает к каждому запросу заголовок с токеном.
-API менять не нужно. Нужно только ответить, **откуда взять токен**.
+LoadKit behaves like Postman: it attaches a header with the token to every request.
+The API does not need to change. You only need to answer **where to get the token**.
 
-### Без авторизации
+### No auth
 
-Ничего не делать.
+Do nothing.
 
-### Я копирую токен вручную (Swagger, Postman, DevTools)
+### I copy the token by hand (Swagger, Postman, DevTools)
 
-1. Скопируй токен так же, как для Postman.
-2. Вставь в `loadtests/.env`: `API_TOKEN=eyJhbGciOi...`
-3. В сценарии: `"auth": { "type": "bearer", "token": "${env:API_TOKEN}" }`
+1. Copy the token the same way you would for Postman.
+2. Paste it into `loadtests/.env`: `API_TOKEN=eyJhbGciOi...`
+3. In the scenario: `"auth": { "type": "bearer", "token": "${env:API_TOKEN}" }`
 
-Токен истекает (обычно через час) — тогда вставь новый. Для прогонов на несколько минут это нормально.
+The token expires (usually after an hour) — then paste a new one. For runs of a few minutes this is fine.
 
-### Azure Function с ключом
+### Azure Function with a key
 
-1. Портал → Function App → App keys → скопировать ключ.
+1. Portal → Function App → App keys → copy the key.
 2. `loadtests/.env`: `FUNC_KEY=...`
 3. `"auth": { "type": "apiKey", "header": "x-functions-key", "value": "${env:FUNC_KEY}" }`
 
-Ключ не истекает.
+The key does not expire.
 
-### API защищён Entra ID, я залогинен через `az login`
+### The API is protected by Entra ID and I am logged in via `az login`
 
-1. Один раз: `az login`.
+1. Once: `az login`.
 2. `"auth": { "type": "azureIdentity", "scope": "api://my-api/.default" }`
 
-`scope` — Application ID URI API из app registration + `/.default`. Токен LoadKit получает сам
-через Azure CLI и сам обновляет. Секретов в файлах нет. Нужно, чтобы у твоей учётки был доступ к API.
+`scope` is the API's Application ID URI from the app registration + `/.default`. LoadKit gets the token itself
+via Azure CLI and refreshes it itself. There are no secrets in files. Your account needs access to the API.
 
-Частая ошибка при первом запуске — **AADSTS65001** с упоминанием «Microsoft Azure CLI». Это значит,
-что API не разрешает Azure CLI получать для себя токены. Владелец app registration API один раз добавляет
-client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46` в Expose an API → Authorized client applications.
+A common error on the first run is **AADSTS65001** mentioning "Microsoft Azure CLI". It means
+the API does not allow Azure CLI to get tokens for it. The owner of the API's app registration adds
+client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46` once under Expose an API → Authorized client applications.
 
-### Остальное
+### Other options
 
-Сервисный клиент (`oauth2ClientCredentials`) и свой endpoint логина (`login`) —
-см. `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
+Service client (`oauth2ClientCredentials`) and your own login endpoint (`login`):
+see `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
 
-## 4. Проверка
+## 4. Check
 
 ```bash
-loadtest validate loadtests/scenarios/my-api.json   # формат и переменные
-loadtest check loadtests/scenarios/my-api.json      # по одному запросу на endpoint
+loadtest validate loadtests/scenarios/my-api.json   # format and variables
+loadtest check loadtests/scenarios/my-api.json      # one request per endpoint
 ```
 
-`check` показывает ответы. `200` — всё настроено. `401` — токен не тот или истёк, узнаёшь это до нагрузки.
-Запросы настоящие: если в сценарии есть POST, `check` создаст одну запись на каждый такой запрос.
+`check` shows the responses. `200` means everything is set up. `401` means the token is wrong or expired — you find out before the load.
+The requests are real: if the scenario has a POST, `check` creates one record for each such request.
 
-## 5. Нагрузка
+## 5. Load
 
 ```bash
 loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 ```
 
-Если `baseUrl` не localhost, LoadKit спросит подтверждение. В скриптах и CI добавь `--yes`.
+If `baseUrl` is not localhost, LoadKit asks for confirmation. In scripts and CI, add `--yes`.
 
-## 6. Работа через AI-ассистента
+## 6. Working through an AI assistant
 
 ```bash
 loadtest ai install
 ```
 
-После этого в Claude Code: `/loadtest нагрузи GET /api/orders, 20 параллельных, 1 минута`
-или просто «проведи нагрузочный тест создания заказов». Ассистент сам напишет сценарий, проверит его,
-попросит добавить секреты в `.env` и перескажет отчёт.
+Then in Claude Code: `/loadtest load GET /api/orders, 20 concurrent, 1 minute`
+or just "run a load test on order creation". The assistant writes the scenario, checks it,
+asks you to add secrets to `.env` and summarizes the report.
 
-## 7. Найти прогон в Application Insights
+## 7. Find the run in Application Insights
 
-В отчёте есть `loadrun` id и готовый запрос:
+The report contains the `loadrun` id and a ready-made query:
 
 ```kusto
 requests

@@ -1,53 +1,53 @@
-# Отчёты и CLI
+# Reports and CLI
 
-> Статус: draft. Справочник команд для пользователей — `docs/user/CLI_REFERENCE.md`.
+> Status: draft. Command reference for users: `docs/user/CLI_REFERENCE.md`.
 
-## Отчёт
+## Report
 
-`RunReport` — единая модель, из которой строятся все форматы:
+`RunReport` is the single model all formats are built from:
 
-- параметры: сценарий, baseUrl (без секретов), concurrency, объём, warmup, длительность, `loadrun` id;
-- итог: всего, успешных, ошибок, процент ошибок, RPS, min/p50/p95/p99/max;
-- по каждому запросу сценария — то же;
-- статус-коды и `ErrorKind` с количеством;
-- примеры ответов с ошибками (замаскированные);
-- гистограмма длительностей (10–20 корзин);
-- проверки порогов;
-- предупреждения (CPU тестера, прерванный прогон, частые 401);
-- готовый KQL-запрос для Application Insights по `loadrun`.
+- parameters: scenario, baseUrl (without secrets), concurrency, volume, warmup, duration, `loadrun` id;
+- totals: total, successful, errors, error rate, RPS, min/p50/p95/p99/max;
+- the same for each scenario request;
+- status codes and `ErrorKind` with counts;
+- sample error responses (masked);
+- duration histogram (10–20 buckets);
+- threshold checks;
+- warnings (tester CPU, interrupted run, frequent 401s);
+- a ready-made KQL query for Application Insights by `loadrun`.
 
-| Формат | Писатель | Назначение |
+| Format | Writer | Purpose |
 |---|---|---|
-| Консоль | `Cli/Rendering/SummaryRenderer` | сразу после прогона |
-| `report.md` | `MarkdownReportWriter` | чтение, PR, анализ AI |
-| `report.json` | `JsonReportWriter` | машинная обработка, сравнение прогонов; схема — контракт |
+| Console | `Cli/Rendering/SummaryRenderer` | right after the run |
+| `report.md` | `MarkdownReportWriter` | reading, PRs, AI analysis |
+| `report.json` | `JsonReportWriter` | machine processing, run comparison; the schema is a contract |
 
-Имя папки отчёта: `<out>/<yyyyMMdd-HHmmss>-<scenario-name>/`.
+Report folder name: `<out>/<yyyyMMdd-HHmmss>-<scenario-name>/`.
 
 ## CLI
 
-Spectre.Console.Cli. Каждая команда — класс в `Commands/`, логика — вызовы Core.
+Spectre.Console.Cli. Each command is a class in `Commands/`; the logic is calls into Core.
 
-| Команда | Core-операции |
+| Command | Core operations |
 |---|---|
-| `init` | генерация сценария из ответов, `.env`-шаблон, `.gitignore` |
-| `validate` | загрузка + валидация |
-| `check` | валидация + preflight + по одному запросу на каждый `requests[]` |
-| `run` | полный поток |
-| `ai install` / `ai status` | см. `AI_INTEGRATION.md` |
+| `init` | generate a scenario from answers, `.env` template, `.gitignore` |
+| `validate` | load + validate |
+| `check` | validate + preflight + one request for each `requests[]` item |
+| `run` | the full flow |
+| `ai install` / `ai status` | see `AI_INTEGRATION.md` |
 
-Коды выхода: `0` ok, `1` пороги нарушены, `2` сценарий невалиден, `3` preflight не прошёл,
-`4` нужно подтверждение для не-localhost URL (запуск без терминала и без `--yes`), `130` прервано `Ctrl+C`.
+Exit codes: `0` ok, `1` thresholds violated, `2` scenario invalid, `3` preflight failed,
+`4` confirmation required for a non-localhost URL (run without a terminal and without `--yes`), `130` interrupted by `Ctrl+C`.
 
-### Подтверждение удалённого URL
+### Remote URL confirmation
 
-- В терминале: вопрос «Нагрузить https://…? concurrency 20, 2000 запросов [y/N]».
-- Без терминала (AI-агент, CI) и без `--yes`: exit 4 и текст «получите подтверждение и повторите с `--yes`».
-  Агент по навыку спрашивает пользователя и только после согласия добавляет `--yes`.
+- In a terminal: a prompt "Load https://…? concurrency 20, 2000 requests [y/N]".
+- Without a terminal (AI agent, CI) and without `--yes`: exit 4 and the text "get confirmation and retry with `--yes`".
+  Following the skill, the agent asks the user and adds `--yes` only after they agree.
 
-### Интерактивный `init`
+### Interactive `init`
 
-Если stdin — терминал и флаги не заданы, задаются вопросы: baseUrl, тип авторизации (пункты
-на понятном языке), scope/заголовок при необходимости. Без терминала (агент, CI) — только флаги:
-`--base-url`, `--auth`, `--scope`, `--header`. Результат: сценарий, `loadtests/.env` с пустыми
-нужными переменными, `loadtests/scenario.schema.json`, записи в `.gitignore`, подсказка следующей команды.
+If stdin is a terminal and no flags are given, it asks: baseUrl, auth type (options
+in plain language), scope/header if needed. Without a terminal (agent, CI), flags only:
+`--base-url`, `--auth`, `--scope`, `--header`. Result: the scenario, `loadtests/.env` with the required
+variables left empty, `loadtests/scenario.schema.json`, `.gitignore` entries, a hint for the next command.

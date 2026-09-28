@@ -1,80 +1,80 @@
-# Сценарии: модель, загрузка, валидация
+# Scenarios: model, loading, validation
 
-> Статус: draft. Формат для пользователей — `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
-> Изменение формата — навык `changing-scenario-format`.
+> Status: draft. User-facing format: `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
+> Format changes: skill `changing-scenario-format`.
 
-## Файлы
+## Files
 
 `src/LoadKit.Core/Scenarios/`: `Model/*`, `ScenarioLoader`, `EnvFileLoader`, `TemplateCompiler`,
-`ScenarioValidator`, `ValidationCodes`; схема для IDE — `schemas/scenario.schema.json`.
+`ScenarioValidator`, `ValidationCodes`; schema for IDEs: `schemas/scenario.schema.json`.
 
-## Валидация без сторонней JSON Schema-библиотеки
+## Validation without a third-party JSON Schema library
 
-Источник истины — `ScenarioValidator`, который обходит `JsonDocument` и собирает **все** ошибки
-(неизвестные поля, типы, обязательные поля, семантика) с JSON-путями. Файл `scenario.schema.json`
-нужен только для автодополнения и подсветки в IDE.
+The source of truth is `ScenarioValidator`, which walks a `JsonDocument` and collects **all** errors
+(unknown fields, types, required fields, semantics) with JSON paths. The `scenario.schema.json` file
+is only for autocompletion and highlighting in IDEs.
 
-Почему не библиотека: популярные варианты имеют ограничения для коммерческого использования
-(Newtonsoft.Json.Schema — лимит бесплатных валидаций, JsonSchema.Net — плата за сопровождение по новой EULA),
-а своя проверка фиксированной структуры — небольшой объём кода и лучшие сообщения об ошибках.
-Расхождение схемы и модели ловит тест согласованности (каждое поле модели есть в схеме и наоборот).
+Why not a library: popular options have restrictions for commercial use
+(Newtonsoft.Json.Schema has a free validation quota, JsonSchema.Net has a maintenance fee under its new EULA),
+while our own check of a fixed structure is a small amount of code and gives better error messages.
+Drift between the schema and the model is caught by a consistency test (every model field is in the schema and vice versa).
 
-## Контракты
+## Contracts
 
-- `ScenarioLoader.LoadAsync(path, envFilePath?, ct) → LoadResult` (сценарий или список ошибок).
-- `ScenarioValidator.Validate(Scenario) → ValidationResult` — все ошибки сразу, у каждой: код,
-  JSON-путь, сообщение, подсказка.
-- `CompiledScenario` — сценарий с разобранными шаблонами, готовый для движка.
+- `ScenarioLoader.LoadAsync(path, envFilePath?, ct) → LoadResult` (a scenario or a list of errors).
+- `ScenarioValidator.Validate(Scenario) → ValidationResult` — all errors at once, each with a code,
+  JSON path, message and hint.
+- `CompiledScenario` — a scenario with parsed templates, ready for the engine.
 
-## Поток
+## Flow
 
-1. Чтение JSON в `JsonDocument` (комментарии и trailing commas разрешены).
-2. Проверка `version`. Неизвестная версия → ошибка с подсказкой обновить инструмент.
-3. Структурная проверка: неизвестные поля (кроме `$schema`), типы, обязательные поля.
-4. Проверка `secret-literal` на **сырых** значениях — до подстановки env, иначе секрет из `.env`
-   выглядел бы как секрет, записанный в файл.
-5. Загрузка `.env`: `--env-file` → `.env` рядом со сценарием → `.env` в родительской папке (`loadtests/`).
-   Переменные окружения процесса имеют приоритет над `.env`.
-6. Подстановка `${env:NAME}` один раз. Отсутствующие переменные собираются в список.
-7. Семантические правила.
-8. Если ошибок нет — десериализация в модель и компиляция шаблонов `{{...}}` в сегменты
-   (литерал / генератор), чтобы в горячем пути не было парсинга.
+1. Read JSON into a `JsonDocument` (comments and trailing commas are allowed).
+2. Check `version`. Unknown version → error with a hint to update the tool.
+3. Structural check: unknown fields (except `$schema`), types, required fields.
+4. `secret-literal` check on **raw** values — before env substitution, otherwise a secret from `.env`
+   would look like a secret written into the file.
+5. Load `.env`: `--env-file` → `.env` next to the scenario → `.env` in the parent folder (`loadtests/`).
+   Process environment variables take precedence over `.env`.
+6. Substitute `${env:NAME}` once. Missing variables are collected into a list.
+7. Semantic rules.
+8. If there are no errors: deserialize into the model and compile `{{...}}` templates into segments
+   (literal / generator), so there is no parsing on the hot path.
 
-## Семантические правила
+## Semantic rules
 
-| Код | Правило | Уровень |
+| Code | Rule | Level |
 |---|---|---|
-| `body-required` | POST/PUT/PATCH без `body`/`bodyRaw` и без `allowEmptyBody` | ошибка |
-| `body-on-get` | `body` у GET/DELETE | предупреждение |
-| `load-mode` | `totalRequests` и `durationSec` одновременно или ни одного | ошибка |
-| `concurrency-gt-total` | `concurrency` > `totalRequests` | предупреждение |
-| `warmup-gt-total` | `warmup` ≥ `totalRequests` | ошибка |
-| `unknown-template` | неизвестный `{{...}}` | ошибка |
-| `env-missing` | переменная не задана | ошибка |
-| `secret-literal` | в `auth.token`, `auth.value`, `auth.clientSecret`, пароле в `auth.request.body` или заголовке `Authorization` стоит литерал, а не `${env:}` | ошибка |
-| `duplicate-request-name` | повтор `requests[].name` | ошибка |
-| `expect-missing` | нет `expect.status` | ошибка |
-| `remote-url` | `baseUrl` не localhost | информация; `run` требует подтверждения (или `--yes`) |
-| `apikey-target` | у `apiKey` нет или оба `header`/`query` | ошибка |
-| `apikey-in-query` | `apiKey` через `query` | предупреждение: ключ попадёт в URL и логи сервера |
+| `body-required` | POST/PUT/PATCH without `body`/`bodyRaw` and without `allowEmptyBody` | error |
+| `body-on-get` | `body` on GET/DELETE | warning |
+| `load-mode` | both `totalRequests` and `durationSec`, or neither | error |
+| `concurrency-gt-total` | `concurrency` > `totalRequests` | warning |
+| `warmup-gt-total` | `warmup` ≥ `totalRequests` | error |
+| `unknown-template` | unknown `{{...}}` | error |
+| `env-missing` | variable not set | error |
+| `secret-literal` | `auth.token`, `auth.value`, `auth.clientSecret`, a password in `auth.request.body` or an `Authorization` header contains a literal instead of `${env:}` | error |
+| `duplicate-request-name` | repeated `requests[].name` | error |
+| `expect-missing` | no `expect.status` | error |
+| `remote-url` | `baseUrl` is not localhost | info; `run` requires confirmation (or `--yes`) |
+| `apikey-target` | `apiKey` has neither or both of `header`/`query` | error |
+| `apikey-in-query` | `apiKey` via `query` | warning: the key ends up in the URL and server logs |
 
-## Шаблоны
+## Templates
 
-| Шаблон | Генератор |
+| Template | Generator |
 |---|---|
 | `{{guid}}` | `Guid.NewGuid()` |
-| `{{seq}}` | `Interlocked.Increment` по сценарию |
+| `{{seq}}` | `Interlocked.Increment` per scenario |
 | `{{randomInt:a:b}}` | `Random.Shared.Next(a, b + 1)` |
-| `{{now}}` | `TimeProvider.GetUtcNow()` в ISO 8601 |
+| `{{now}}` | `TimeProvider.GetUtcNow()` in ISO 8601 |
 
-В `body` строка, целиком состоящая из числового шаблона, сериализуется как число.
-Новый шаблон — класс `ITemplateGenerator` + регистрация + строка в справочнике.
+In `body`, a string consisting entirely of a numeric template is serialized as a number.
+A new template is an `ITemplateGenerator` class + registration + a row in the reference.
 
-## Граничные случаи
+## Edge cases
 
-- BOM и CRLF в файлах — поддерживаются.
-- `.env`: строки `KEY=VALUE`, `#` — комментарий, кавычки снимаются, `export ` в начале игнорируется.
-- Значение `${env:X}` внутри строки подставляется как часть строки: `"Bearer ${env:T}"`.
-- `$schema` — единственное поле вне формата, которое разрешено и игнорируется.
-- `init` копирует схему в `loadtests/scenario.schema.json` и ставит в сценарий
-  `"$schema": "../scenario.schema.json"`, чтобы автодополнение работало без интернета.
+- BOM and CRLF in files are supported.
+- `.env`: `KEY=VALUE` lines, `#` is a comment, quotes are stripped, a leading `export ` is ignored.
+- A `${env:X}` value inside a string is substituted as part of the string: `"Bearer ${env:T}"`.
+- `$schema` is the only field outside the format that is allowed and ignored.
+- `init` copies the schema to `loadtests/scenario.schema.json` and sets
+  `"$schema": "../scenario.schema.json"` in the scenario, so autocompletion works offline.

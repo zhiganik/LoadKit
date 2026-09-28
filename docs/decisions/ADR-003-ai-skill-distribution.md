@@ -1,31 +1,31 @@
-# ADR-003: Навык для AI поставляется внутри инструмента
+# ADR-003: The AI skill ships inside the tool
 
-- **Статус:** accepted (ready)
-- **Дата:** 2026-09
+- **Status:** accepted (ready)
+- **Date:** 2026-09
 
-## Контекст
+## Context
 
-Цель — чтобы пользователь мог сказать AI-ассистенту «проведи нагрузку на X» или вызвать `/loadtest`,
-и ассистент корректно написал сценарий, проверил его и запустил. Ассистент должен знать формат
-сценария и правила безопасности, а версия этих знаний должна совпадать с версией инструмента.
+The goal: a user can tell an AI assistant "run a load test on X" or invoke `/loadtest`,
+and the assistant correctly writes a scenario, checks it and runs it. The assistant must know the scenario
+format and the safety rules, and the version of that knowledge must match the tool version.
 
-## Рассмотренные варианты
+## Options considered
 
-1. **Документация в README** — ассистент может не найти её или прочитать устаревшую версию.
-2. **Отдельный репозиторий навыков** — версия расходится с версией инструмента.
-3. **Навык внутри инструмента + команда установки** — версия всегда совпадает, установка одной командой.
+1. **Documentation in the README** — the assistant may not find it or may read an outdated version.
+2. **A separate skills repository** — its version drifts from the tool version.
+3. **Skill inside the tool + an install command** — the version always matches; one-command install.
 
-## Решение
+## Decision
 
-Вариант 3. Исходник — `ai/skills/loadtest/`, при сборке он встраивается в `LoadKit.Cli` по ссылке.
-Команда `loadtest ai install` копирует навык в проект или глобально; `--agents-md` добавляет
-блок в `AGENTS.md` для инструментов, которые не поддерживают навыки.
+Option 3. The source is `ai/skills/loadtest/`; at build time it is embedded into `LoadKit.Cli` by link.
+The `loadtest ai install` command copies the skill into the project or globally; `--agents-md` adds
+a block to `AGENTS.md` for tools that do not support skills.
 
-Формат навыка — открытый стандарт Agent Skills (фронтматтер только из полей спецификации),
-чтобы один файл работал в Claude Code и других совместимых инструментах.
+The skill format is the open Agent Skills standard (frontmatter uses only spec fields),
+so one file works in Claude Code and other compatible tools.
 
-## Последствия
+## Consequences
 
-- Навык встраивается в сборку по ссылке на `ai/skills/loadtest/**`, копии в репозитории нет.
-- Изменение формата сценария обязано обновлять навык (навык `changing-scenario-format`).
-- Навык тестируется сценариями с агентом перед релизом.
+- The skill is embedded into the build by linking `ai/skills/loadtest/**`; there is no copy in the repository.
+- A scenario format change must update the skill (skill `changing-scenario-format`).
+- The skill is tested with agent scenarios before a release.

@@ -1,62 +1,60 @@
-# Правила документации
+# Documentation rules
 
-> Статус: ready
+> Status: ready
 
-## Слои
+## Layers
 
-1. **Навигация** — `AGENTS.md` (+ `CLAUDE.md` как тонкая надстройка для Claude Code).
-2. **Правила и устройство** — `docs/`.
-3. **Продуктовые артефакты для пользователей** — `ai/skills/loadtest/`, `docs/user/`.
+1. **Navigation** — `AGENTS.md` (+ `CLAUDE.md` as a thin layer on top for Claude Code).
+2. **Rules and design** — `docs/`.
+3. **Product artifacts for users** — `ai/skills/loadtest/`, `docs/user/`.
 
-При конфликте — порядок из `AGENTS.md`. Код описывает реализацию, документация — намерение.
-Если код ушёл вперёд, документацию обновляют в том же PR.
+On conflict, use the order from `AGENTS.md`. Code describes the implementation, documentation describes intent.
+If the code has moved ahead, the documentation is updated in the same PR.
 
-## Язык и имена
+## Language and names
 
-- Текст документов — по-русски.
-- Входные файлы для агентов (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`) — по-английски: их читают разные
-  AI-инструменты, и они распространяются в чужие репозитории.
-- Имена файлов — по-английски, `UPPER_SNAKE.md`. ADR — `ADR-NNN-kebab-title.md`.
+- All documentation is written in English.
+- File names are English, `UPPER_SNAKE.md`. ADRs: `ADR-NNN-kebab-title.md`.
 
-## Статус
+## Status
 
-В начале каждого документа: `> Статус: draft` или `> Статус: ready`.
-`draft` — документ опережает код или ещё обсуждается. `ready` — совпадает с кодом.
+At the top of every document: `> Status: draft` or `> Status: ready`.
+`draft` means the document is ahead of the code or still under discussion. `ready` means it matches the code.
 
-## Куда класть
+## Where to put it
 
-| Что | Куда |
+| What | Where |
 |---|---|
-| Правило, обязательное для всего кода | `docs/standards/` |
-| Как устроен компонент | `docs/architecture/<COMPONENT>.md` |
-| Почему принято решение, альтернативы | `docs/decisions/ADR-NNN-*.md` |
-| Инструкция для пользователя инструмента | `docs/user/` |
-| Инструкция для AI в чужом репозитории | `ai/skills/loadtest/` |
-| Повторяемая процедура разработки для агента | `.claude/skills/<verb-ing-name>/` |
-| Термин | `docs/glossary/TERMS.md` |
+| A rule mandatory for all code | `docs/standards/` |
+| How a component works | `docs/architecture/<COMPONENT>.md` |
+| Why a decision was made, alternatives | `docs/decisions/ADR-NNN-*.md` |
+| Instructions for users of the tool | `docs/user/` |
+| Instructions for AI in someone else's repository | `ai/skills/loadtest/` |
+| A repeatable development procedure for an agent | `.claude/skills/<verb-ing-name>/` |
+| A term | `docs/glossary/TERMS.md` |
 
-Новый документ добавляется в индекс `docs/README.md` в том же PR.
+A new document is added to the `docs/README.md` index in the same PR.
 
-## Шаблон документа компонента
+## Component document template
 
-1. Назначение (1–3 предложения)
-2. Файлы (пути)
-3. Контракты (интерфейсы, форматы)
-4. Поток выполнения
-5. Граничные случаи
-6. Как расширять
-7. Тесты (что покрыто и где)
+1. Purpose (1–3 sentences)
+2. Files (paths)
+3. Contracts (interfaces, formats)
+4. Execution flow
+5. Edge cases
+6. How to extend
+7. Tests (what is covered and where)
 
-## Навыки (SKILL.md)
+## Skills (SKILL.md)
 
-- Фронтматтер — только поля спецификации Agent Skills: `name`, `description`, опционально `metadata`,
+- Frontmatter uses only Agent Skills spec fields: `name`, `description`, optionally `metadata`,
   `license`, `compatibility`, `allowed-tools`.
-- `description` начинается с «Use when…» и описывает только условия применения, без пересказа шагов.
-- Тело — короткое (до ~500 слов), тяжёлые справочники — отдельными файлами рядом.
+- `description` starts with "Use when…" and describes only when to apply the skill, without restating the steps.
+- The body is short (up to ~500 words); heavy references go into separate files next to it.
 
-## Проверяемые примеры
+## Verifiable examples
 
-JSON-блоки в `SCENARIO_REFERENCE.md` и `docs/user/*` проверяются тестами `Category=Docs`:
-- блок без пометки — полный сценарий;
-- `<!-- fragment:auth -->` перед блоком — объект `auth`, проверяется как фрагмент;
-- `<!-- no-validate -->` — не проверяется (использовать в крайнем случае, с причиной рядом).
+JSON blocks in `SCENARIO_REFERENCE.md` and `docs/user/*` are checked by `Category=Docs` tests:
+- a block without a marker is a full scenario;
+- `<!-- fragment:auth -->` before a block means an `auth` object, checked as a fragment;
+- `<!-- no-validate -->` means not checked (use as a last resort, with a reason next to it).

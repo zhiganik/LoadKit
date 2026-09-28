@@ -1,123 +1,123 @@
-# Авторизация
+# Auth
 
-> Статус: draft. Добавление типа — навык `adding-auth-provider`.
-> Пользовательская инструкция — `docs/user/GETTING_STARTED.md`.
+> Status: draft. Adding a type: skill `adding-auth-provider`.
+> User instructions: `docs/user/GETTING_STARTED.md`.
 
-## Назначение
+## Purpose
 
-Тестируемому API ничего менять не нужно. LoadKit ведёт себя как обычный клиент (Postman, фронтенд)
-и прикладывает к запросам те же заголовки. Задача модуля:
-1. получить токен **до** старта нагрузки;
-2. держать его свежим во время прогона;
-3. подставлять его в каждый запрос без затрат времени, чтобы не искажать метрики.
+Nothing needs to change in the API under test. LoadKit behaves like a regular client (Postman, a frontend)
+and attaches the same headers to requests. The module's job:
+1. acquire a token **before** the load starts;
+2. keep it fresh during the run;
+3. apply it to every request at no time cost, so metrics are not distorted.
 
-## Файлы
+## Files
 
 `src/LoadKit.Core/Auth/`: `IAuthProvider`, `TokenAuthProviderBase`, `AuthHandler`,
 `AuthProviderFactory`, `AuthOptionsParser`, `SecretMasker`, `Providers/*`.
 
-## Контракты
+## Contracts
 
 ```csharp
 public interface IAuthProvider
 {
     Task InitializeAsync(CancellationToken cancellationToken);                              // preflight
     ValueTask ApplyAsync(HttpRequestMessage request, CancellationToken cancellationToken);  // hot path
-    void MarkStale();                                                                        // после 401
+    void MarkStale();                                                                        // after 401
 }
 
 public abstract class TokenAuthProviderBase : IAuthProvider
 {
     protected abstract Task<AccessTokenResult> AcquireTokenAsync(CancellationToken cancellationToken);
-    // кэш, фоновое обновление на ~80% срока жизни, SemaphoreSlim, повтор при сбое обновления
+    // cache, background refresh at ~80% of lifetime, SemaphoreSlim, retry on refresh failure
 }
 
 public readonly record struct AccessTokenResult(string Token, DateTimeOffset? ExpiresAt);
 ```
 
-Пайплайн:
+Pipeline:
 
 ```
-HttpClient → AuthHandler (DelegatingHandler) → SocketsHttpHandler → сеть
+HttpClient → AuthHandler (DelegatingHandler) → SocketsHttpHandler → network
 ```
 
-Запросы с `"auth": false` помечаются через `HttpRequestMessage.Options`, и `AuthHandler` их пропускает.
+Requests with `"auth": false` are marked via `HttpRequestMessage.Options`, and `AuthHandler` skips them.
 
-## Типы
+## Types
 
-| `type` | Как получает токен | Срок жизни | Секрет | Проверка локально |
+| `type` | How it gets the token | Lifetime | Secret | Local check |
 |---|---|---|---|---|
-| `bearer` | готовое значение из `${env:}` | не отслеживается | `${env:}` | `/secure` TargetApi |
-| `apiKey` | готовое значение, в заголовок или query | не отслеживается | `${env:}` | `/secure` TargetApi |
-| `login` | запрос к своему endpoint, токен по JSONPath | `expiresInPath` или JWT `exp` | `${env:}` | `/auth/login` TargetApi |
-| `oauth2ClientCredentials` | POST на `tokenUrl` (client credentials) | `expires_in` | `${env:}` | `/oauth2/token` TargetApi |
-| `azureIdentity` | `AzureCliCredential` (по умолчанию) или `DefaultAzureCredential` | из токена | нет | fake `TokenCredential` в тестах |
+| `bearer` | ready value from `${env:}` | not tracked | `${env:}` | TargetApi `/secure` |
+| `apiKey` | ready value, in a header or query | not tracked | `${env:}` | TargetApi `/secure` |
+| `login` | request to your own endpoint, token via JSONPath | `expiresInPath` or JWT `exp` | `${env:}` | TargetApi `/auth/login` |
+| `oauth2ClientCredentials` | POST to `tokenUrl` (client credentials) | `expires_in` | `${env:}` | TargetApi `/oauth2/token` |
+| `azureIdentity` | `AzureCliCredential` (default) or `DefaultAzureCredential` | from the token | none | fake `TokenCredential` in tests |
 
-### Поля
+### Fields
 
-- `bearer`: `token`; опционально `header` (по умолчанию `Authorization`) и `format`
-  (по умолчанию `Bearer {token}`).
-- `apiKey`: `value` и ровно одно из `header` / `query`. Рекомендуется `header`: значение в query
-  попадает в URL, а URL пишется в логи и телеметрию сервера.
-- `login`: `request` (как элемент `requests[]`, путь относительно `baseUrl`), `tokenPath`,
-  опционально `expiresInPath`, `header`, `format`.
+- `bearer`: `token`; optional `header` (default `Authorization`) and `format`
+  (default `Bearer {token}`).
+- `apiKey`: `value` and exactly one of `header` / `query`. `header` is recommended: a value in the query
+  ends up in the URL, and the URL is written to server logs and telemetry.
+- `login`: `request` (like a `requests[]` item, path relative to `baseUrl`), `tokenPath`,
+  optional `expiresInPath`, `header`, `format`.
 - `oauth2ClientCredentials`: `tokenUrl`, `clientId`, `clientSecret`, `scope`.
-- `azureIdentity`: `scope`, опционально `source`: `azureCli` (по умолчанию) или `default`.
+- `azureIdentity`: `scope`, optional `source`: `azureCli` (default) or `default`.
 
-## Поток
+## Flow
 
 ```mermaid
 sequenceDiagram
     participant CLI
     participant Provider as IAuthProvider
-    participant IdP as Источник токена
+    participant IdP as Token source
     participant API
     CLI->>Provider: InitializeAsync (preflight)
-    Provider->>IdP: получить токен
-    IdP-->>Provider: токен + срок жизни
-    Note over CLI: ошибка → exit 3 с подсказкой
-    loop каждый запрос
-        CLI->>Provider: ApplyAsync (только чтение кэша)
-        CLI->>API: запрос с заголовком
+    Provider->>IdP: acquire token
+    IdP-->>Provider: token + lifetime
+    Note over CLI: failure → exit 3 with a hint
+    loop every request
+        CLI->>Provider: ApplyAsync (cache read only)
+        CLI->>API: request with header
     end
-    Note over Provider: на ~80% срока жизни — фоновое обновление
+    Note over Provider: at ~80% of lifetime — background refresh
     API-->>CLI: 401
-    CLI->>Provider: MarkStale → внеочередное фоновое обновление
+    CLI->>Provider: MarkStale → out-of-band background refresh
 ```
 
-1. `AuthProviderFactory` создаёт провайдер по `auth.type`.
-2. `InitializeAsync` в preflight получает первый токен. Ошибка → exit 3 с сообщением «что проверить».
-3. Во время прогона `ApplyAsync` читает токен из поля (volatile read), без сетевых вызовов.
-4. Фоновое обновление — таймер на ~80% срока жизни (через `TimeProvider`).
-5. Ответ 401 → `MarkStale()` → внеочередное фоновое обновление, не чаще раза в 5 секунд.
-   Сам запрос не повторяется: повторы искажают метрики.
-6. `bearer` и `apiKey` не умеют обновляться: `MarkStale` для них только увеличивает счётчик,
-   а отчёт подсказывает «токен истёк — обновите переменную».
+1. `AuthProviderFactory` creates a provider from `auth.type`.
+2. `InitializeAsync` in preflight acquires the first token. Failure → exit 3 with a "what to check" message.
+3. During the run, `ApplyAsync` reads the token from a field (volatile read), without network calls.
+4. Background refresh is a timer at ~80% of lifetime (via `TimeProvider`).
+5. A 401 response → `MarkStale()` → out-of-band background refresh, at most once every 5 seconds.
+   The request itself is not retried: retries distort metrics.
+6. `bearer` and `apiKey` cannot refresh: for them `MarkStale` only increments a counter,
+   and the report hints "token expired — update the variable".
 
-## Безопасность
+## Security
 
-- `SecretMasker` маскирует заголовки `Authorization`, `x-functions-key`, `Cookie`, `api-key`,
-  `x-api-key`, query-параметр из `apiKey.query`, а также все значения, подставленные из `${env:}`
-  в `auth.*`. Маскирование действует в консоли, отчётах и логах.
-- `check` показывает ответ сервера, но не отправленные секреты.
-- Секрет, записанный прямо в JSON, — ошибка валидации `secret-literal` (проверяется до подстановки env).
+- `SecretMasker` masks the `Authorization`, `x-functions-key`, `Cookie`, `api-key`,
+  `x-api-key` headers, the query parameter from `apiKey.query`, and all values substituted from `${env:}`
+  into `auth.*`. Masking applies to the console, reports and logs.
+- `check` shows the server response, but not the secrets sent.
+- A secret written directly in JSON is a `secret-literal` validation error (checked before env substitution).
 
-## Граничные случаи и типовые ошибки
+## Edge cases and common errors
 
-- **Bearer истёк во время прогона** — рост 401 и подсказка обновить переменную.
-- **JWT без `exp` и без `expiresInPath`** — токен считается бессрочным, предупреждение в `check`.
-- **`azureIdentity` без `az login`** — exit 3 с командой `az login`.
-- **`azureIdentity`: ошибка согласия AADSTS65001** для приложения «Microsoft Azure CLI».
-  API в Entra ID по умолчанию не разрешает Azure CLI получать для себя токены. Владелец app registration
-  API должен добавить Azure CLI (client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46`) в «Authorized client
-  applications» в разделе Expose an API. Сообщение об ошибке в LoadKit содержит эту подсказку.
-- **`oauth2ClientCredentials` получает токен, но API отвечает 401/403** — токен выдан приложению, а не
-  пользователю (роли вместо scopes). API должен принимать app-only токены с нужной ролью.
-- **`scope`** для своего API — `api://<application-id-uri>/.default`.
+- **Bearer expired during the run** — 401s grow and a hint to update the variable is shown.
+- **JWT without `exp` and without `expiresInPath`** — the token is treated as non-expiring, with a warning in `check`.
+- **`azureIdentity` without `az login`** — exit 3 with the `az login` command.
+- **`azureIdentity`: consent error AADSTS65001** for the "Microsoft Azure CLI" application.
+  By default, an API in Entra ID does not allow Azure CLI to get tokens for it. The owner of the API's app registration
+  must add Azure CLI (client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46`) to "Authorized client
+  applications" under Expose an API. The LoadKit error message includes this hint.
+- **`oauth2ClientCredentials` gets a token, but the API returns 401/403** — the token was issued to an application, not
+  a user (roles instead of scopes). The API must accept app-only tokens with the required role.
+- **`scope`** for your own API is `api://<application-id-uri>/.default`.
 
-## Тестовые endpoint'ы TargetApi
+## TargetApi test endpoints
 
-- `/secure` принимает: статический dev-токен из конфигурации, API key в `x-api-key`, токены,
-  выданные `/auth/login` и `/oauth2/token`. Иначе 401.
-- `/auth/login` и `/oauth2/token` выдают токены с настраиваемым сроком жизни (по умолчанию 10 секунд),
-  чтобы тесты обновления укладывались в секунды.
+- `/secure` accepts: a static dev token from configuration, an API key in `x-api-key`, and tokens
+  issued by `/auth/login` and `/oauth2/token`. Otherwise 401.
+- `/auth/login` and `/oauth2/token` issue tokens with a configurable lifetime (10 seconds by default),
+  so refresh tests take seconds.

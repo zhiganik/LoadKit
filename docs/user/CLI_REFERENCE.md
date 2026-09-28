@@ -1,56 +1,56 @@
-# Справочник команд
+# Command reference
 
-> Статус: draft. Это публичный контракт: изменение флагов — в итоговом отчёте задачи, ломающее — ADR.
+> Status: draft. This is a public contract: flag changes go into the task's final report, breaking changes need an ADR.
 
 ## `loadtest init <file>`
 
-Создаёт сценарий, `.env`-шаблон и записи в `.gitignore`.
+Creates a scenario, a `.env` template and `.gitignore` entries.
 
-| Флаг | Описание |
+| Flag | Description |
 |---|---|
-| `--base-url <url>` | адрес API |
+| `--base-url <url>` | API address |
 | `--auth <type>` | `none`, `bearer`, `apiKey`, `azureIdentity`, `oauth2ClientCredentials`, `login` |
-| `--source <src>` | для `azureIdentity`: `azureCli` (по умолчанию) или `default` |
-| `--scope <scope>` | для `azureIdentity` / `oauth2ClientCredentials` |
-| `--header <name>` | для `apiKey` (по умолчанию `x-functions-key`) |
-| `--no-interactive` | не задавать вопросы (автоматически, если нет терминала) |
+| `--source <src>` | for `azureIdentity`: `azureCli` (default) or `default` |
+| `--scope <scope>` | for `azureIdentity` / `oauth2ClientCredentials` |
+| `--header <name>` | for `apiKey` (default `x-functions-key`) |
+| `--no-interactive` | do not ask questions (automatic when there is no terminal) |
 
 ## `loadtest validate <file>`
 
-Проверяет формат и переменные, ничего не отправляет. Код выхода `0` или `2`.
+Checks the format and variables, sends nothing. Exit code `0` or `2`.
 
 ## `loadtest check <file>`
 
-Preflight + по одному запросу на каждый элемент `requests[]`, показывает статус, время и начало тела ответа.
-Код выхода `0`, `2` или `3`.
+Preflight + one request for each `requests[]` item; shows the status, time and the start of the response body.
+Exit code `0`, `2` or `3`.
 
-Запросы настоящие: POST из сценария действительно создаст запись. Для подтверждения удалённого URL
-действуют те же правила, что для `run`.
+The requests are real: a POST from the scenario will actually create a record. The same remote URL
+confirmation rules apply as for `run`.
 
 ## `loadtest run <file>`
 
-| Флаг | Описание |
+| Flag | Description |
 |---|---|
-| `--out <dir>` | папка для `report.md` и `report.json` |
-| `--concurrency <n>` | переопределить `load.concurrency` |
-| `--total <n>` | переопределить `load.totalRequests` |
-| `--duration <sec>` | переопределить `load.durationSec` |
-| `--env-file <path>` | путь к `.env` |
-| `--no-tag` | не добавлять `loadrun` в query |
-| `--yes` | подтверждение для не-localhost URL заранее |
+| `--out <dir>` | folder for `report.md` and `report.json` |
+| `--concurrency <n>` | override `load.concurrency` |
+| `--total <n>` | override `load.totalRequests` |
+| `--duration <sec>` | override `load.durationSec` |
+| `--env-file <path>` | path to `.env` |
+| `--no-tag` | do not add `loadrun` to the query string |
+| `--yes` | confirm a non-localhost URL in advance |
 
-Коды выхода: `0` ok, `1` пороги нарушены, `2` сценарий невалиден, `3` preflight не прошёл,
-`4` нужно подтверждение (нет терминала и нет `--yes`), `130` прервано.
+Exit codes: `0` ok, `1` thresholds violated, `2` scenario invalid, `3` preflight failed,
+`4` confirmation required (no terminal and no `--yes`), `130` interrupted.
 
 ## `loadtest ai install`
 
-| Флаг | Куда |
+| Flag | Where |
 |---|---|
-| (нет) | `./.claude/skills/loadtest/` |
+| (none) | `./.claude/skills/loadtest/` |
 | `--global` | `~/.claude/skills/loadtest/` |
 | `--dir <path>` | `<path>/loadtest/` |
-| `--agents-md` | дополнительно блок в `./AGENTS.md` |
+| `--agents-md` | additionally a block in `./AGENTS.md` |
 
 ## `loadtest ai status`
 
-Показывает, где установлен навык и совпадает ли его версия с версией инструмента.
+Shows where the skill is installed and whether its version matches the tool version.

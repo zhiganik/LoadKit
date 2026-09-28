@@ -1,16 +1,16 @@
-# Формат сценария LoadKit (version 1)
+# LoadKit scenario format (version 1)
 
-> Статус: draft. Справочник для людей и AI-ассистентов. Правила работы — в [SKILL.md](SKILL.md).
-> Все JSON-примеры в этом файле автоматически проверяются тестами (`Category=Docs`).
+> Status: draft. Reference for people and AI assistants. Working rules are in [SKILL.md](SKILL.md).
+> All JSON examples in this file are automatically checked by tests (`Category=Docs`).
 
-## Структура
+## Structure
 
 ```json
 {
   "$schema": "../scenario.schema.json",
   "version": 1,
   "name": "orders-smoke",
-  "description": "Что проверяет сценарий",
+  "description": "What the scenario checks",
   "baseUrl": "https://localhost:5001",
   "headers": { "Accept": "application/json" },
   "auth": { "type": "bearer", "token": "${env:API_TOKEN}" },
@@ -23,74 +23,74 @@
 }
 ```
 
-`$schema` необязателен и даёт автодополнение в IDE. `loadtest init` кладёт схему в
-`loadtests/scenario.schema.json` и прописывает относительный путь.
+`$schema` is optional and gives IDE autocompletion. `loadtest init` puts the schema into
+`loadtests/scenario.schema.json` and sets the relative path.
 
-## Корневые поля
+## Root fields
 
-| Поле | Обяз. | По умолчанию | Описание |
+| Field | Req. | Default | Description |
 |---|---|---|---|
-| `version` | да | — | версия формата, сейчас `1` |
-| `name` | да | — | имя сценария, попадает в отчёт |
-| `description` | нет | — | что проверяет сценарий |
-| `baseUrl` | да | — | адрес API; поддерживает `${env:...}` |
-| `headers` | нет | `{}` | заголовки для всех запросов |
-| `auth` | нет | без авторизации | см. «Авторизация» |
-| `tagRuns` | нет | `true` | добавлять `loadrun=<id>` в query для фильтрации в Application Insights |
-| `load` | да | — | параметры нагрузки |
-| `requests` | да | — | минимум один запрос |
-| `thresholds` | нет | — | пороги, влияющие на код выхода |
+| `version` | yes | — | format version, currently `1` |
+| `name` | yes | — | scenario name, shown in the report |
+| `description` | no | — | what the scenario checks |
+| `baseUrl` | yes | — | API address; supports `${env:...}` |
+| `headers` | no | `{}` | headers for all requests |
+| `auth` | no | no auth | see "Authentication" |
+| `tagRuns` | no | `true` | add `loadrun=<id>` to the query string for filtering in Application Insights |
+| `load` | yes | — | load parameters |
+| `requests` | yes | — | at least one request |
+| `thresholds` | no | — | thresholds that affect the exit code |
 
 ## `load`
 
-| Поле | Обяз. | По умолчанию | Описание |
+| Field | Req. | Default | Description |
 |---|---|---|---|
-| `concurrency` | да | — | сколько запросов одновременно «в полёте» |
-| `totalRequests` | одно из двух | — | сколько всего запросов |
-| `durationSec` | одно из двух | — | длительность прогона в секундах |
-| `warmup` | нет | `0` | первые N запросов не учитываются в метриках |
-| `timeoutMs` | нет | `30000` | таймаут одного запроса |
+| `concurrency` | yes | — | how many requests are "in flight" at the same time |
+| `totalRequests` | one of two | — | total number of requests |
+| `durationSec` | one of two | — | run duration in seconds |
+| `warmup` | no | `0` | the first N requests are not counted in metrics |
+| `timeoutMs` | no | `30000` | timeout for a single request |
 
-`concurrency` — это не «запросов в секунду». 20 означает, что 20 воркеров шлют следующий запрос сразу
-после ответа на предыдущий.
+`concurrency` is not "requests per second". 20 means 20 workers each send the next request right
+after the response to the previous one.
 
 ## `requests[]`
 
-| Поле | Обяз. | По умолчанию | Описание |
+| Field | Req. | Default | Description |
 |---|---|---|---|
-| `name` | да | — | уникальное имя, попадает в отчёт |
-| `method` | да | — | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
-| `path` | да | — | путь от `baseUrl`, шаблоны разрешены |
-| `weight` | нет | `1` | доля в миксе (веса 70/30 = 7/3) |
-| `headers` | нет | — | дополняют корневые заголовки |
-| `query` | нет | — | объект query-параметров |
-| `body` | для POST/PUT/PATCH | — | JSON-объект |
-| `bodyRaw` | нет | — | тело строкой вместо `body` |
-| `contentType` | нет | `application/json` | тип для `bodyRaw` |
-| `allowEmptyBody` | нет | `false` | разрешить POST/PUT/PATCH без тела |
-| `auth` | нет | `true` | `false` — отправить без авторизации |
-| `expect.status` | да | — | допустимые коды, например `[200]` |
-| `expect.maxMs` | нет | — | более медленный ответ считается ошибкой |
+| `name` | yes | — | unique name, shown in the report |
+| `method` | yes | — | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| `path` | yes | — | path relative to `baseUrl`, templates allowed |
+| `weight` | no | `1` | share in the mix (weights 70/30 = 7/3) |
+| `headers` | no | — | added to the root headers |
+| `query` | no | — | object of query parameters |
+| `body` | for POST/PUT/PATCH | — | JSON object |
+| `bodyRaw` | no | — | body as a string instead of `body` |
+| `contentType` | no | `application/json` | content type for `bodyRaw` |
+| `allowEmptyBody` | no | `false` | allow POST/PUT/PATCH without a body |
+| `auth` | no | `true` | `false` — send without auth |
+| `expect.status` | yes | — | allowed status codes, e.g. `[200]` |
+| `expect.maxMs` | no | — | a slower response counts as an error |
 
 ## `thresholds`
 
-`p50Ms`, `p95Ms`, `p99Ms` — максимум для перцентиля по всем запросам; `errorRatePercent` — максимум
-процента ошибок. Нарушение любого порога → код выхода `1`.
+`p50Ms`, `p95Ms`, `p99Ms` — maximum for the percentile across all requests; `errorRatePercent` — maximum
+error rate. Violating any threshold → exit code `1`.
 
-## Авторизация
+## Authentication
 
-Токен получается **до старта** нагрузки и обновляется в фоне, на метрики это не влияет.
-Секреты — только `${env:ИМЯ}`; значения лежат в `loadtests/.env`.
+The token is acquired **before the load starts** and refreshed in the background; this does not affect metrics.
+Secrets only as `${env:NAME}`; the values live in `loadtests/.env`.
 
-| Тип | Обязательные поля | Необязательные |
+| Type | Required fields | Optional |
 |---|---|---|
 | `bearer` | `token` | `header` (`Authorization`), `format` (`Bearer {token}`) |
-| `apiKey` | `value` + одно из `header` / `query` | — |
-| `azureIdentity` | `scope` | `source`: `azureCli` (по умолчанию) или `default` |
+| `apiKey` | `value` + one of `header` / `query` | — |
+| `azureIdentity` | `scope` | `source`: `azureCli` (default) or `default` |
 | `oauth2ClientCredentials` | `tokenUrl`, `clientId`, `clientSecret`, `scope` | — |
 | `login` | `request`, `tokenPath` | `expiresInPath`, `header` (`Authorization`), `format` (`Bearer {token}`) |
 
-`apiKey` лучше передавать заголовком: значение в `query` попадает в URL, а URL пишется в логи сервера.
+Prefer passing `apiKey` in a header: a value in `query` ends up in the URL, and the URL is written to server logs.
 
 <!-- fragment:auth -->
 ```json
@@ -112,9 +112,9 @@
 { "type": "azureIdentity", "scope": "api://my-api/.default" }
 ```
 
-Если `check` падает с AADSTS65001 и упоминанием «Microsoft Azure CLI»: API не разрешает Azure CLI получать
-токены. Владелец app registration API добавляет client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46`
-в Expose an API → Authorized client applications.
+If `check` fails with AADSTS65001 mentioning "Microsoft Azure CLI": the API does not allow Azure CLI to get
+tokens. The owner of the API's app registration adds client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46`
+under Expose an API → Authorized client applications.
 
 <!-- fragment:auth -->
 ```json
@@ -142,22 +142,22 @@
 }
 ```
 
-## Подстановки
+## Substitutions
 
-| Синтаксис | Когда вычисляется | Пример |
+| Syntax | When evaluated | Example |
 |---|---|---|
-| `${env:NAME}` | один раз при загрузке | значение из окружения или `.env` |
-| `{{guid}}` | на каждый запрос | `3f2b8c1e-...` |
-| `{{seq}}` | на каждый запрос | `1`, `2`, `3` |
-| `{{randomInt:MIN:MAX}}` | на каждый запрос | `42` (границы включительно) |
-| `{{now}}` | на каждый запрос | `2026-09-24T10:15:30Z` |
+| `${env:NAME}` | once, at load time | value from the environment or `.env` |
+| `{{guid}}` | per request | `3f2b8c1e-...` |
+| `{{seq}}` | per request | `1`, `2`, `3` |
+| `{{randomInt:MIN:MAX}}` | per request | `42` (bounds inclusive) |
+| `{{now}}` | per request | `2026-09-24T10:15:30Z` |
 
-Работают в `path`, `query`, `headers`, `body`, `bodyRaw`. В `body` строка, целиком состоящая из
-`{{seq}}` или `{{randomInt:...}}`, становится числом.
+They work in `path`, `query`, `headers`, `body`, `bodyRaw`. In `body`, a string consisting entirely of
+`{{seq}}` or `{{randomInt:...}}` becomes a number.
 
-## Примеры
+## Examples
 
-### Смоук без авторизации
+### Smoke test without auth
 
 ```json
 {
@@ -172,7 +172,7 @@
 }
 ```
 
-### Azure Function с ключом
+### Azure Function with a key
 
 ```json
 {
@@ -193,13 +193,13 @@
 }
 ```
 
-### Микс запросов, Entra ID через `az login`
+### Request mix, Entra ID via `az login`
 
 ```json
 {
   "version": 1,
   "name": "orders-mix",
-  "description": "70% чтение, 25% создание, 5% без токена (ожидаем 401)",
+  "description": "70% reads, 25% creates, 5% without a token (expect 401)",
   "baseUrl": "https://localhost:5001",
   "auth": { "type": "azureIdentity", "scope": "api://orders-api/.default" },
   "load": { "concurrency": 20, "durationSec": 120, "warmup": 50 },
@@ -217,9 +217,9 @@
 }
 ```
 
-### Трафик для Application Insights
+### Traffic for Application Insights
 
-Ожидаемые 500-е указаны в `expect`, чтобы отчёт показывал только неожиданные ошибки.
+Expected 500s are listed in `expect`, so the report shows only unexpected errors.
 
 ```json
 {
@@ -236,21 +236,21 @@
 }
 ```
 
-## Тестовые данные
+## Test data
 
-- Уникальные ключи — через `{{guid}}` / `{{seq}}`, иначе конфликты (409) исказят результат.
-- Помечайте создаваемые данные, чтобы потом удалить: `"clientRef": "loadtest-{{guid}}"`.
-- Не нагружайте endpoint'ы с побочными эффектами (письма, платежи, SMS) без заглушек или тестового режима.
-- `check` тоже отправляет настоящие запросы: один POST на каждый элемент `requests[]`.
+- Unique keys via `{{guid}}` / `{{seq}}`, otherwise conflicts (409) distort the results.
+- Tag created data so you can delete it later: `"clientRef": "loadtest-{{guid}}"`.
+- Do not load endpoints with side effects (emails, payments, SMS) without stubs or a test mode.
+- `check` also sends real requests: one POST for each `requests[]` item.
 
-## Частые ошибки валидации
+## Common validation errors
 
-| Сообщение | Что делать |
+| Message | What to do |
 |---|---|
-| `requests[i].body is required for POST` | добавить `body` или `"allowEmptyBody": true` |
-| `env variable API_TOKEN is not set` | добавить переменную в `loadtests/.env` |
-| `secret-like value found in auth.token` | заменить значение на `${env:...}` |
-| `load: specify either totalRequests or durationSec` | оставить одно поле |
-| `unknown template {{uuid}}` | использовать `{{guid}}` |
-| `unknown field 'retries'` | поля нет в формате; убрать |
-| `apiKey: specify exactly one of header or query` | оставить одно |
+| `requests[i].body is required for POST` | add `body` or `"allowEmptyBody": true` |
+| `env variable API_TOKEN is not set` | add the variable to `loadtests/.env` |
+| `secret-like value found in auth.token` | replace the value with `${env:...}` |
+| `load: specify either totalRequests or durationSec` | keep only one field |
+| `unknown template {{uuid}}` | use `{{guid}}` |
+| `unknown field 'retries'` | the field is not in the format; remove it |
+| `apiKey: specify exactly one of header or query` | keep only one |

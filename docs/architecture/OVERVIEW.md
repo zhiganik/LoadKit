@@ -1,23 +1,23 @@
-# Обзор архитектуры
+# Architecture overview
 
-> Статус: draft
+> Status: draft
 
-## Назначение
+## Purpose
 
-LoadKit — консольный `dotnet tool` для локального нагрузочного тестирования HTTP API.
-Нагрузка описывается JSON-сценарием; инструмент валидирует его, получает токены, отправляет запросы,
-считает перцентили и формирует отчёт. Сценарии могут писать AI-ассистенты через навык `loadtest`.
+LoadKit is a console `dotnet tool` for local load testing of HTTP APIs.
+Load is described by a JSON scenario; the tool validates it, acquires tokens, sends requests,
+calculates percentiles and produces a report. Scenarios can be written by AI assistants via the `loadtest` skill.
 
-## Принципы
+## Principles
 
-1. Сценарий — данные, а не код.
-2. Честные метрики: в замер попадает только HTTP-запрос.
-3. Секреты не лежат в файлах сценария и не попадают в отчёты.
-4. Ошибка видна до старта нагрузки (`validate`, `check`).
-5. Расширение одним классом: auth-тип, формат отчёта, шаблон.
-6. Core не зависит от оболочки: Cli сегодня, Desktop — возможно завтра (ADR-002).
+1. A scenario is data, not code.
+2. Honest metrics: only the HTTP request is measured.
+3. Secrets do not live in scenario files and never end up in reports.
+4. Errors are visible before the load starts (`validate`, `check`).
+5. Extension with a single class: auth type, report format, template.
+6. Core does not depend on the shell: Cli today, possibly Desktop tomorrow (ADR-002).
 
-## Компоненты
+## Components
 
 ```mermaid
 flowchart LR
@@ -37,39 +37,39 @@ flowchart LR
     RP --> R
 ```
 
-| Компонент | Документ |
+| Component | Document |
 |---|---|
 | Scenarios | `SCENARIOS.md` |
 | Auth | `AUTH.md` |
 | Engine, Metrics | `ENGINE.md` |
 | Reporting, CLI | `REPORTING_AND_CLI.md` |
-| Навык для AI | `AI_INTEGRATION.md` |
+| AI skill | `AI_INTEGRATION.md` |
 
-## Поток `loadtest run`
+## `loadtest run` flow
 
 ```mermaid
 flowchart TD
-    A[Чтение JSON] --> B[.env и подстановка env]
-    B --> C[Валидация: схема + семантика]
-    C -->|ошибки| X2[Exit 2]
-    C --> D[Пайплайн HttpClient: AuthHandler → SocketsHttpHandler]
-    D --> E[Preflight: токен + доступность baseUrl]
-    E -->|ошибка| X3[Exit 3]
+    A[Read JSON] --> B[.env and env substitution]
+    B --> C[Validation: schema + semantics]
+    C -->|errors| X2[Exit 2]
+    C --> D[HttpClient pipeline: AuthHandler → SocketsHttpHandler]
+    D --> E[Preflight: token + baseUrl reachability]
+    E -->|failure| X3[Exit 3]
     E --> F[Warmup]
-    F --> G[Основной прогон]
-    G --> H[Метрики]
-    H --> I[Отчёты: консоль, MD, JSON]
-    I --> J{Пороги}
+    F --> G[Main run]
+    G --> H[Metrics]
+    H --> I[Reports: console, MD, JSON]
+    I --> J{Thresholds}
     J -->|ok| X0[Exit 0]
-    J -->|нарушены| X1[Exit 1]
-    D -.->|не-localhost без подтверждения| X4[Exit 4]
+    J -->|violated| X1[Exit 1]
+    D -.->|non-localhost without confirmation| X4[Exit 4]
 ```
 
-## Структура решения
+## Solution structure
 
 ```
 src/LoadKit.Core/
-  Scenarios/   Model/, ScenarioLoader, EnvFileLoader, TemplateCompiler, ScenarioValidator (свой, без библиотеки)
+  Scenarios/   Model/, ScenarioLoader, EnvFileLoader, TemplateCompiler, ScenarioValidator (own, no library)
   Auth/        IAuthProvider, TokenAuthProviderBase, AuthHandler, AuthProviderFactory, Providers/, SecretMasker
   Engine/      LoadRunner, WeightedRequestPicker, RequestFactory, HttpPipelineFactory
   Metrics/     RequestResult, ResultCollector, PercentileCalculator, ThresholdEvaluator
@@ -77,12 +77,12 @@ src/LoadKit.Core/
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
   Rendering/   ProgressRenderer, SummaryRenderer, ValidationRenderer
-  (csproj)     встраивает ai/skills/loadtest/** и schemas/ по ссылке, без копии
+  (csproj)     embeds ai/skills/loadtest/** and schemas/ by link, without a copy
 samples/TargetApi, samples/scenarios
 schemas/scenario.schema.json
 ```
 
-## Ограничения v1
+## v1 limitations
 
-Нет: распределённой нагрузки, цепочек запросов с передачей данных, открытой модели (фиксированный RPS),
-стадий разгона, протоколов кроме HTTP. Кандидаты v2 — в `docs/PLAN.md`.
+Not included: distributed load, request chains passing data between steps, open model (fixed RPS),
+ramp-up stages, protocols other than HTTP. v2 candidates are in `docs/PLAN.md`.

@@ -1,43 +1,43 @@
-# Стиль C#
+# C# style
 
-> Статус: ready
+> Status: ready
 
-## Проект
+## Project
 
 - `net10.0`, `<LangVersion>latest</LangVersion>`, `<Nullable>enable</Nullable>`,
   `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`, `<ImplicitUsings>enable</ImplicitUsings>`.
-- Общие настройки — в `Directory.Build.props`, версии пакетов — в `Directory.Packages.props`
+- Shared settings live in `Directory.Build.props`, package versions in `Directory.Packages.props`
   (Central Package Management).
-- Форматирование — `.editorconfig` + `dotnet format`. Спорные случаи решает `dotnet format`, а не вкус.
+- Formatting: `.editorconfig` + `dotnet format`. Disputed cases are decided by `dotnet format`, not by taste.
 
-## Код
+## Code
 
-- File-scoped namespaces. Один публичный тип — один файл, имя файла = имя типа.
-- Классы `sealed` по умолчанию. Наследование — только осознанно (`TokenAuthProviderBase`).
-- Модели данных — `record` / `readonly record struct`. Изменяемое состояние — только внутри движка.
-- Нет статического изменяемого состояния. `Random.Shared` и `TimeProvider` — через параметры,
-  чтобы тесты были детерминированными.
-- Асинхронность до конца: никаких `.Result`, `.Wait()`, `async void`.
-- `CancellationToken` — последний параметр любого async-метода Core, всегда передаётся дальше.
-- `ConfigureAwait(false)` в `LoadKit.Core` не обязателен (консольное приложение без контекста синхронизации).
-- Исключения: ошибки пользователя (невалидный сценарий, нет переменной) — не исключения, а результат
-  `ValidationResult` с понятными сообщениями. Исключения — только для действительно исключительных ситуаций.
+- File-scoped namespaces. One public type per file, file name = type name.
+- Classes are `sealed` by default. Inheritance only when deliberate (`TokenAuthProviderBase`).
+- Data models are `record` / `readonly record struct`. Mutable state only inside the engine.
+- No static mutable state. `Random.Shared` and `TimeProvider` are passed as parameters
+  so tests are deterministic.
+- Async all the way: no `.Result`, `.Wait()`, `async void`.
+- `CancellationToken` is the last parameter of every async method in Core and is always passed on.
+- `ConfigureAwait(false)` is not required in `LoadKit.Core` (console app without a synchronization context).
+- Exceptions: user errors (invalid scenario, missing variable) are not exceptions but a
+  `ValidationResult` with clear messages. Exceptions are only for truly exceptional situations.
 
-## Именование
+## Naming
 
-- Явные имена: `requestDurationTicks`, а не `d`; `scenarioFilePath`, а не `path2`.
-- Асинхронные методы — с суффиксом `Async`.
-- Интерфейсы — `I*`, только если есть больше одной реализации или нужна подмена в тестах.
-- Коды ошибок валидации — константы `ValidationCodes.*` в `kebab-case` (`body-required`).
+- Explicit names: `requestDurationTicks`, not `d`; `scenarioFilePath`, not `path2`.
+- Async methods have the `Async` suffix.
+- Interfaces `I*` only if there is more than one implementation or a test substitute is needed.
+- Validation error codes are `ValidationCodes.*` constants in `kebab-case` (`body-required`).
 
-## Горячий путь (цикл отправки запросов)
+## Hot path (request sending loop)
 
-- Без блокировок, LINQ, аллокаций строк на парсинг, `string.Format`.
-- Шаблоны разобраны заранее; запрос собирается из готовых частей.
-- Замер — `Stopwatch.GetTimestamp()` / `Stopwatch.GetElapsedTime()`.
+- No locks, LINQ, string allocations for parsing, `string.Format`.
+- Templates are parsed in advance; a request is assembled from prepared parts.
+- Timing uses `Stopwatch.GetTimestamp()` / `Stopwatch.GetElapsedTime()`.
 
-## Вывод и логирование
+## Output and logging
 
-- `LoadKit.Core` не пишет в консоль и не зависит от Spectre.Console.
-- Прогресс — через `IProgress<RunProgress>`, события — через возвращаемые объекты.
-- Секреты не логируются никогда; перед выводом значения проходят через `SecretMasker`.
+- `LoadKit.Core` does not write to the console and does not depend on Spectre.Console.
+- Progress goes through `IProgress<RunProgress>`, events through returned objects.
+- Secrets are never logged; values pass through `SecretMasker` before output.

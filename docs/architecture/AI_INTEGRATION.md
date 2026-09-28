@@ -1,62 +1,62 @@
-# Интеграция с AI-ассистентами
+# AI assistant integration
 
-> Статус: draft. Решение — ADR-003.
+> Status: draft. Decision: ADR-003.
 
-## Две аудитории
+## Two audiences
 
-| Аудитория | Где работает | Что читает |
+| Audience | Where they work | What they read |
 |---|---|---|
-| Разработчики LoadKit | этот репозиторий | `AGENTS.md`, `CLAUDE.md`, `docs/`, `.claude/skills/*` |
-| Пользователи LoadKit | свои репозитории | навык `loadtest`, установленный командой `loadtest ai install` |
+| LoadKit developers | this repository | `AGENTS.md`, `CLAUDE.md`, `docs/`, `.claude/skills/*` |
+| LoadKit users | their own repositories | the `loadtest` skill, installed with `loadtest ai install` |
 
-## Навык `loadtest`
+## The `loadtest` skill
 
-Исходник — `ai/skills/loadtest/`:
-- `SKILL.md` — когда применять, порядок работы, правила безопасности, как читать отчёт (англ.);
-- `SCENARIO_REFERENCE.md` — полный справочник формата (рус.), примеры проверяются тестами.
+Source: `ai/skills/loadtest/`:
+- `SKILL.md` — when to apply, workflow, safety rules, how to read the report;
+- `SCENARIO_REFERENCE.md` — the full format reference; examples are checked by tests.
 
-Формат — открытый стандарт Agent Skills. В Claude Code навык в `.claude/skills/loadtest/` становится
-командой `/loadtest` и вызывается моделью автоматически по `description`.
+The format is the open Agent Skills standard. In Claude Code, a skill in `.claude/skills/loadtest/` becomes
+the `/loadtest` command and is invoked by the model automatically based on its `description`.
 
-## Поставка
+## Distribution
 
-Навык вшит в инструмент: `LoadKit.Cli.csproj` подключает файлы `ai/skills/loadtest/**` как embedded
-resources по ссылке (`<EmbeddedResource Include="..\..\ai\skills\loadtest\**" LinkBase="AiAssets" />`).
-Копии в репозитории нет, поэтому синхронизировать нечего, а версия навыка всегда совпадает с версией
-CLI и формата сценария. Так же встраивается `schemas/scenario.schema.json` (для `init`).
+The skill is built into the tool: `LoadKit.Cli.csproj` includes the `ai/skills/loadtest/**` files as embedded
+resources by link (`<EmbeddedResource Include="..\..\ai\skills\loadtest\**" LinkBase="AiAssets" />`).
+There is no copy in the repository, so there is nothing to sync, and the skill version always matches the
+CLI and scenario format versions. `schemas/scenario.schema.json` is embedded the same way (for `init`).
 
 ```bash
-loadtest ai install                     # → ./.claude/skills/loadtest/ (Claude Code, проект)
+loadtest ai install                     # → ./.claude/skills/loadtest/ (Claude Code, project)
 loadtest ai install --global            # → ~/.claude/skills/loadtest/
-loadtest ai install --dir <path>        # → любой каталог навыков другого AI-инструмента
-loadtest ai install --agents-md         # + короткий блок в AGENTS.md проекта
-loadtest ai status                      # версия установленного навыка vs версия инструмента
+loadtest ai install --dir <path>        # → any skills directory of another AI tool
+loadtest ai install --agents-md         # + a short block in the project's AGENTS.md
+loadtest ai status                      # installed skill version vs tool version
 ```
 
-`--agents-md` — универсальный запасной путь: добавляет в `AGENTS.md` проекта блок между маркерами
-`<!-- loadkit:start -->` / `<!-- loadkit:end -->` со ссылкой на навык и тремя главными правилами
-(только сценарии, секреты через `.env`, подтверждение для удалённых URL). Повторный запуск
-обновляет блок, не дублируя его.
+`--agents-md` is a universal fallback: it adds a block to the project's `AGENTS.md` between the
+`<!-- loadkit:start -->` / `<!-- loadkit:end -->` markers with a link to the skill and the three main rules
+(scenarios only, secrets via `.env`, confirmation for remote URLs). Running it again
+updates the block without duplicating it.
 
-Пути для других AI-инструментов проверяются по их документации; LoadKit не угадывает их, а принимает `--dir`.
+Paths for other AI tools are checked against their documentation; LoadKit does not guess them and accepts `--dir` instead.
 
-## Версионирование
+## Versioning
 
-`metadata` в `SKILL.md` содержит `loadkit-version` и `scenario-format-version`.
-- `ai status` и `validate` предупреждают, если установленный навык старше инструмента.
-- Ломающее изменение формата → повышение `scenario-format-version` (навык `changing-scenario-format`).
+`metadata` in `SKILL.md` contains `loadkit-version` and `scenario-format-version`.
+- `ai status` and `validate` warn if the installed skill is older than the tool.
+- A breaking format change → bump `scenario-format-version` (skill `changing-scenario-format`).
 
-## Сценарий использования
+## Usage example
 
 ```
-Пользователь: /loadtest нагрузи создание заказов, 30 параллельных, 2 минуты
-Агент: находит маршруты в коде → пишет loadtests/scenarios/orders-create.json →
-       validate → просит добавить API_TOKEN в .env → check → run → пересказывает report.md
+User: /loadtest load order creation, 30 concurrent, 2 minutes
+Agent: finds the routes in code → writes loadtests/scenarios/orders-create.json →
+       validate → asks to add API_TOKEN to .env → check → run → summarizes report.md
 ```
 
-## Проверка качества навыка
+## Checking skill quality
 
-Навык — это тоже код. Перед релизом он проверяется сценариями с агентом (см. `docs/PLAN.md`, фаза 5):
-базовое поведение без навыка → поведение с навыком → закрытие найденных лазеек.
-Типовые сбои, которые должны быть закрыты: агент пишет скрипт нагрузки вместо сценария, вставляет
-токен в JSON, пропускает `check`, запускает нагрузку на удалённый URL без подтверждения.
+A skill is code too. Before a release it is checked with agent scenarios (see `docs/PLAN.md`, phase 5):
+baseline behavior without the skill → behavior with the skill → closing the loopholes found.
+Typical failures that must be closed: the agent writes a load script instead of a scenario, puts
+a token into JSON, skips `check`, runs load against a remote URL without confirmation.

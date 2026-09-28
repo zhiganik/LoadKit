@@ -1,57 +1,57 @@
-# Тестирование
+# Testing
 
-> Статус: ready
+> Status: ready
 
-## Инструменты
+## Tools
 
-- xUnit. Утверждения — встроенный `Assert` (или Shouldly). FluentAssertions v8+ не используем (лицензия).
-- Подмены — ручные fake-классы. Мок-библиотека — только если fake получается сложнее теста.
-- `TimeProvider` (FakeTimeProvider) — для тестов обновления токенов и длительности прогона.
+- xUnit. Assertions: built-in `Assert` (or Shouldly). FluentAssertions v8+ is not used (license).
+- Test doubles: hand-written fake classes. A mocking library only if the fake would be more complex than the test.
+- `TimeProvider` (FakeTimeProvider) for token refresh and run duration tests.
 
-## Уровни
+## Levels
 
-| Уровень | Проект | Что покрывает |
+| Level | Project | Covers |
 |---|---|---|
-| Unit | `LoadKit.Core.Tests` | валидация, шаблоны, `.env`, перцентили, пороги, маскирование, auth-провайдеры |
-| Integration | `LoadKit.IntegrationTests` | CLI-команды против `samples/TargetApi`, коды выхода, содержимое отчётов |
-| Docs | `Category=Docs` | JSON-примеры в `SCENARIO_REFERENCE.md`, `docs/user/*`, `samples/scenarios/*` валидны (с учётом `fragment:auth`); схема согласована с моделью |
+| Unit | `LoadKit.Core.Tests` | validation, templates, `.env`, percentiles, thresholds, masking, auth providers |
+| Integration | `LoadKit.IntegrationTests` | CLI commands against `samples/TargetApi`, exit codes, report contents |
+| Docs | `Category=Docs` | JSON examples in `SCENARIO_REFERENCE.md`, `docs/user/*`, `samples/scenarios/*` are valid (taking `fragment:auth` into account); schema matches the model |
 
-## Обязательные тесты
+## Mandatory tests
 
-- **Перцентили** — на известных массивах: для 2000 значений p95 — это 1900-е по порядку, p99 — 1980-е.
-  Граничные случаи: 1 значение, одинаковые значения, пустой набор. Отдельный тест на N, при которых
-  вычисление в `double` дало бы ошибку ранга на единицу.
-- **Валидация** — на каждое правило: позитивный и негативный случай, проверка JSON-пути и текста ошибки.
-- **Auth** — `ApplyAsync` не делает сетевых вызовов; обновление токена происходит один раз
-  при 50 параллельных запросах; секреты маскируются в отчёте.
-- **Коды выхода** — 0/1/2/3/4 в интеграционных тестах (4: удалённый URL без терминала и без `--yes`).
-- **Токены** — токен TargetApi со сроком 10 с в 30-секундном прогоне: нет 401, нет всплеска p99.
+- **Percentiles** — on known arrays: for 2000 values p95 is the 1900th in order, p99 the 1980th.
+  Edge cases: 1 value, identical values, empty set. A separate test for N where
+  computing in `double` would give an off-by-one rank error.
+- **Validation** — for every rule: a positive and a negative case, checking the JSON path and error text.
+- **Auth** — `ApplyAsync` makes no network calls; the token is refreshed exactly once
+  with 50 concurrent requests; secrets are masked in the report.
+- **Exit codes** — 0/1/2/3/4 in integration tests (4: remote URL without a terminal and without `--yes`).
+- **Tokens** — a TargetApi token with a 10 s lifetime in a 30-second run: no 401s, no p99 spike.
 
-## TargetApi для тестов
+## TargetApi for tests
 
-`samples/TargetApi` — минимальный ASP.NET Core API. В интеграционных тестах поднимается на
-**настоящем** Kestrel с портом 0 (случайный свободный порт). `WebApplicationFactory` со встроенным
-TestServer не подходит: CLI ходит в сеть по-настоящему, а TestServer живёт в памяти.
+`samples/TargetApi` is a minimal ASP.NET Core API. In integration tests it runs on
+**real** Kestrel with port 0 (a random free port). `WebApplicationFactory` with the built-in
+TestServer does not fit: the CLI makes real network calls, while TestServer lives in memory.
 
-| Endpoint | Поведение |
+| Endpoint | Behavior |
 |---|---|
-| `/health` | 200 сразу |
-| `/api/fast` | 200 сразу |
-| `/api/slow` | 200 с задержкой (настраивается) |
-| `/api/fail` | 500 с заданной вероятностью |
-| `/api/dep` | вызывает внешний fake-сервис |
-| `/secure` | 200 с dev-токеном, `x-api-key` или токеном от `/auth/login`, `/oauth2/token`; иначе 401 |
-| `/auth/login` | POST `{email, password}` → `{accessToken, expiresIn}`, срок по умолчанию 10 с |
-| `/oauth2/token` | POST form (client credentials) → `{access_token, expires_in}`, срок по умолчанию 10 с |
+| `/health` | 200 immediately |
+| `/api/fast` | 200 immediately |
+| `/api/slow` | 200 with a delay (configurable) |
+| `/api/fail` | 500 with a given probability |
+| `/api/dep` | calls an external fake service |
+| `/secure` | 200 with a dev token, `x-api-key`, or a token from `/auth/login` or `/oauth2/token`; otherwise 401 |
+| `/auth/login` | POST `{email, password}` → `{accessToken, expiresIn}`, default lifetime 10 s |
+| `/oauth2/token` | POST form (client credentials) → `{access_token, expires_in}`, default lifetime 10 s |
 
-## Тест-аудит перед задачей
+## Test audit before a task
 
-Перед нетривиальной задачей в чате фиксируется:
-1. какие тесты уже покрывают область;
-2. какие тесты добавляются сейчас;
-3. что откладывается и почему.
+Before a non-trivial task, record in the chat:
+1. which tests already cover the area;
+2. which tests are added now;
+3. what is deferred and why.
 
-## Не тестируем
+## Not tested
 
-- Абсолютные значения задержек (зависят от машины). Проверяем порядок и отношения.
-- Внешние сервисы (Entra ID) — только через fake `TokenCredential`.
+- Absolute latency values (machine-dependent). We check order and ratios.
+- External services (Entra ID) — only through a fake `TokenCredential`.

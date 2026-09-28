@@ -1,112 +1,112 @@
-# ADR-001: Собственный движок нагрузки вместо готовых инструментов
+# ADR-001: Own load engine instead of existing tools
 
-- **Статус:** accepted (ready)
-- **Дата:** 2026-09
+- **Status:** accepted (ready)
+- **Date:** 2026-09
 
-## Контекст
+## Context
 
-В рамках задачи по настройке мониторинга Web App и Function App в Azure (Application Insights,
-дашборды, воркбуки, алерты) нужно регулярно создавать нагрузку на API, чтобы:
+While setting up monitoring for a Web App and a Function App in Azure (Application Insights,
+dashboards, workbooks, alerts), we regularly need to generate load on an API in order to:
 
-- проверять, что телеметрия, перцентили и ошибки корректно отображаются;
-- сравнивать производительность до и после изменений при локальной разработке;
-- воспроизводить проблемы (медленные endpoint'ы, ошибки под нагрузкой).
+- check that telemetry, percentiles and errors are displayed correctly;
+- compare performance before and after changes during local development;
+- reproduce problems (slow endpoints, errors under load).
 
-Сейчас для этого каждый раз пишется код нагрузочного теста, а отчёт собирается вручную.
-Это медленно, не переиспользуется и плохо передаётся коллегам.
+Today, load test code is written from scratch every time, and the report is assembled by hand.
+This is slow, not reusable and hard to hand over to colleagues.
 
-Требования к решению:
+Requirements for the solution:
 
-1. Нагрузка описывается декларативно (файл сценария), а не кодом.
-2. Поддержка авторизации, включая токены с ограниченным сроком жизни.
-3. Отчёт с p50 / p95 / p99 и разбивкой ошибок.
-4. Сценарии может писать AI-ассистент.
-5. Можно использовать внутри организации без лицензионных ограничений и затрат.
-6. Работает локально, ставится одной командой, команда пишет на .NET.
-7. Реализуется за 1–3 дня.
+1. Load is described declaratively (a scenario file), not in code.
+2. Auth support, including tokens with a limited lifetime.
+3. A report with p50 / p95 / p99 and an error breakdown.
+4. An AI assistant can write scenarios.
+5. Usable inside an organization without licensing restrictions or costs.
+6. Runs locally, installs with one command; the team writes .NET.
+7. Can be built in 1–3 days.
 
-## Рассмотренные варианты
+## Options considered
 
 ### NBomber
 
-.NET-фреймворк нагрузочного тестирования, сценарии пишутся на C#.
+A .NET load testing framework; scenarios are written in C#.
 
-- ➕ Зрелый, .NET-нативный, хорошие отчёты.
-- ➖ **Лицензия:** начиная с v5 NBomber бесплатен только для личного использования.
-  Использование в организации требует коммерческой подписки.
-- ➖ Версия v4 остаётся под Apache 2.0, но она устарела и не развивается.
-- ➖ Сценарии — это код на C#. Декларативный JSON-формат всё равно пришлось бы писать поверх.
+- ➕ Mature, .NET-native, good reports.
+- ➖ **License:** since v5, NBomber is free only for personal use.
+  Use within an organization requires a commercial subscription.
+- ➖ v4 remains under Apache 2.0, but it is outdated and no longer developed.
+- ➖ Scenarios are C# code. A declarative JSON format would have to be built on top anyway.
 
-**Вывод:** не подходит по требованию 5; требование 1 всё равно потребовало бы своей обёртки.
+**Conclusion:** fails requirement 5; requirement 1 would need our own wrapper anyway.
 
 ### k6
 
-Open-source инструмент, сценарии на JavaScript.
+An open-source tool with scenarios in JavaScript.
 
-- ➕ Отличный инструмент, бесплатный, хорошая документация, стадии нагрузки, пороги.
-- ➖ Отдельный рантайм и язык (JS), не .NET.
-- ➖ Сценарий — это скрипт, а не данные; для простых случаев избыточно.
+- ➕ An excellent tool, free, good documentation, load stages, thresholds.
+- ➖ A separate runtime and language (JS), not .NET.
+- ➖ A scenario is a script, not data; overkill for simple cases.
 
-**Вывод:** остаётся рекомендуемым инструментом для полноценных нагрузочных тестов.
-Для быстрой локальной проверки тяжелее, чем нужно.
+**Conclusion:** remains the recommended tool for full-scale load tests.
+Heavier than needed for a quick local check.
 
 ### Azure Load Testing
 
-Облачный управляемый сервис, поддерживает JMeter и Locust.
+A managed cloud service; supports JMeter and Locust.
 
-- ➕ Масштаб, интеграция с Azure Monitor, запуск из CI.
-- ➖ Платный, работает в облаке, требует настройки ресурса.
-- ➖ Не предназначен для быстрых локальных прогонов во время разработки.
+- ➕ Scale, Azure Monitor integration, runs from CI.
+- ➖ Paid, runs in the cloud, requires setting up a resource.
+- ➖ Not designed for quick local runs during development.
 
-**Вывод:** для pre-production и больших тестов; для локальной разработки избыточен.
+**Conclusion:** for pre-production and large tests; overkill for local development.
 
 ### Apache JMeter
 
-- ➕ Бесплатный, очень функциональный.
-- ➖ Тяжёлый (Java, GUI, XML-сценарии), высокий порог входа, неудобно генерировать сценарии AI.
+- ➕ Free, very feature-rich.
+- ➖ Heavy (Java, GUI, XML scenarios), steep learning curve, awkward for AI to generate scenarios.
 
-**Вывод:** избыточен.
+**Conclusion:** overkill.
 
 ### Postman (Performance testing)
 
-- ➕ Многие уже используют Postman.
-- ➖ Привязан к экосистеме и аккаунту Postman, ограниченные возможности настройки и экспорта.
+- ➕ Many people already use Postman.
+- ➖ Tied to the Postman ecosystem and account, limited configuration and export options.
 
-**Вывод:** не подходит как общий инструмент команды.
+**Conclusion:** not suitable as a shared team tool.
 
 ### oha / bombardier / hey
 
-Консольные утилиты «одна команда — один URL».
+Console utilities: "one command — one URL".
 
-- ➕ Мгновенный старт, показывают перцентили.
-- ➖ Один endpoint за прогон, нет микса запросов с весами, нет обновления токенов, нет порогов,
-  нет сценариев в файлах.
+- ➕ Instant start, show percentiles.
+- ➖ One endpoint per run, no weighted request mix, no token refresh, no thresholds,
+  no scenarios in files.
 
-**Вывод:** хороши для разового замера, но не покрывают требования 1–4.
+**Conclusion:** good for a one-off measurement, but do not cover requirements 1–4.
 
-### Собственный CLI-инструмент (LoadKit)
+### Own CLI tool (LoadKit)
 
-- ➕ Декларативный JSON-сценарий с JSON Schema и валидацией.
-- ➕ Авторизация под наши кейсы (Entra ID, function keys, свой логин).
-- ➕ Нет лицензионных ограничений: зависимости только под MIT / Apache 2.0.
-- ➕ Инструкция и схема для AI, генерация сценариев без программирования.
-- ➕ Небольшой объём: ядро движка около 200–300 строк.
-- ➖ Код нужно поддерживать самим.
-- ➖ Не подходит для больших и распределённых нагрузок.
-- ➖ Нагрузка с одной машины: тестер и приложение могут делить ресурсы.
+- ➕ Declarative JSON scenario with JSON Schema and validation.
+- ➕ Auth for our cases (Entra ID, function keys, custom login).
+- ➕ No licensing restrictions: dependencies only under MIT / Apache 2.0.
+- ➕ Instructions and a schema for AI; scenarios generated without programming.
+- ➕ Small size: the engine core is about 200–300 lines.
+- ➖ We have to maintain the code ourselves.
+- ➖ Not suitable for large and distributed loads.
+- ➖ Load from a single machine: the tester and the application may share resources.
 
-## Решение
+## Decision
 
-Разрабатываем собственный CLI-инструмент LoadKit с минимальным набором функций (см. README).
-Движок нагрузки скрыт за интерфейсом, чтобы при необходимости его можно было заменить
-(например, на NBomber при покупке лицензии) без изменения формата сценариев.
+We build our own CLI tool, LoadKit, with a minimal feature set (see README).
+The load engine is hidden behind an interface so it can be replaced if needed
+(for example, with NBomber if a license is bought) without changing the scenario format.
 
-Для продакшн-нагрузки и больших объёмов по-прежнему используем k6 или Azure Load Testing.
+For production load and large volumes we still use k6 or Azure Load Testing.
 
-## Последствия
+## Consequences
 
-- Разработка: 1–3 дня на v1.
-- Поддержка: владелец инструмента — команда, зависимости обновляются вместе с остальными проектами.
-- Нагрузочные сценарии хранятся в репозиториях сервисов рядом с кодом.
-- Результаты локальных прогонов используются для сравнения «до / после», а не как абсолютные цифры
-  производительности продакшна.
+- Development: 1–3 days for v1.
+- Maintenance: the team owns the tool; dependencies are updated together with other projects.
+- Load scenarios are stored in service repositories next to the code.
+- Local run results are used for "before / after" comparison, not as absolute numbers
+  for production performance.

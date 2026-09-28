@@ -1,79 +1,79 @@
 # LoadKit
 
-> Статус: draft
+> Status: draft
 
-Простой CLI-инструмент для нагрузочного тестирования HTTP API при локальной разработке.
-Сценарий описывается в JSON-файле, запускается одной командой, результат — отчёт с перцентилями
-(p50 / p95 / p99), ошибками по статус-кодам и примерами ответов.
+A simple CLI tool for load testing HTTP APIs during local development.
+A scenario is described in a JSON file and started with one command; the result is a report with percentiles
+(p50 / p95 / p99), errors by status code and sample responses.
 
 ```bash
 loadtest run scenarios/orders.json
 ```
 
-> Название `LoadKit` рабочее, можно заменить.
+> `LoadKit` is a working name and may change.
 
 ---
 
-## Какую проблему решает
+## What problem it solves
 
-1. **Нагрузочные тесты пишутся кодом каждый раз заново.** Под каждую задачу создаётся свой проект,
-   свой цикл запросов, свой подсчёт метрик и ручная сборка отчёта. Это долго и не переиспользуется.
-2. **Тесты сложно передать коллеге.** Чтобы повторить прогон, нужно разбираться в чужом коде.
-3. **Для мониторинга нужна реалистичная нагрузка.** Чтобы увидеть осмысленные данные в Application
-   Insights (дашборды, воркбуки, перцентили, Application Map), нужен микс запросов, ошибки и авторизация,
-   а не один endpoint в цикле.
-4. **Промышленные инструменты избыточны для локальной задачи.** k6, Azure Load Testing и JMeter
-   хороши для полноценных тестов, но для «быстро прогнать локально перед коммитом» они тяжеловаты.
-   Подробное сравнение — в [ADR-001](docs/decisions/ADR-001-own-load-engine.md).
+1. **Load tests are written as code from scratch every time.** Each task gets its own project,
+   its own request loop, its own metric calculation and a hand-assembled report. It is slow and not reusable.
+2. **Tests are hard to hand over to a colleague.** To repeat a run, you have to understand someone else's code.
+3. **Monitoring needs realistic load.** To see meaningful data in Application
+   Insights (dashboards, workbooks, percentiles, Application Map), you need a mix of requests, errors and auth,
+   not a single endpoint in a loop.
+4. **Industrial tools are overkill for a local task.** k6, Azure Load Testing and JMeter
+   are good for full-scale tests, but too heavy for "quickly run it locally before a commit".
+   Detailed comparison: [ADR-001](docs/decisions/ADR-001-own-load-engine.md).
 
-## Как возникла идея
+## Where the idea came from
 
-В рамках задачи по настройке мониторинга Web App и Function App в Azure (Application Insights,
-дашборды, воркбуки, алерты) понадобилось регулярно генерировать нагрузку и проверять, что метрики
-и перцентили отображаются корректно. Писать для этого код каждый раз оказалось неудобно. Отсюда идея:
-**один инструмент, в котором нагрузка объявляется сценарием, а не программируется.**
+While setting up monitoring for a Web App and a Function App in Azure (Application Insights,
+dashboards, workbooks, alerts), I regularly needed to generate load and check that metrics
+and percentiles were displayed correctly. Writing code for that every time was inconvenient. Hence the idea:
+**one tool where load is declared as a scenario, not programmed.**
 
-Дополнительная цель — сценарии должен уметь писать AI-ассистент. Для этого есть JSON Schema,
-команда `validate` и навык [`loadtest`](ai/skills/loadtest/SKILL.md) со справочником [SCENARIO_REFERENCE.md](ai/skills/loadtest/SCENARIO_REFERENCE.md).
+An additional goal: an AI assistant should be able to write scenarios. For that there is a JSON Schema,
+the `validate` command and the [`loadtest`](ai/skills/loadtest/SKILL.md) skill with the [SCENARIO_REFERENCE.md](ai/skills/loadtest/SCENARIO_REFERENCE.md) reference.
 
-## Что умеет
+## Features
 
-- Сценарий в JSON с автодополнением в IDE (через JSON Schema).
-- Метод, путь, заголовки, query, body; микс запросов с весами.
-- Параллельность, общее число запросов или длительность, прогрев (warmup), таймаут.
-- Авторизация: bearer-токен, API key / function key, Azure Identity (`az login`),
-  OAuth2 client credentials, логин через свой endpoint.
-- Секреты только из переменных окружения или `.env`, никогда в самом сценарии.
-- Шаблоны для разнообразных данных: `{{guid}}`, `{{randomInt:1:100}}`, `{{seq}}`, `{{now}}`.
-- Отчёт: RPS, p50/p95/p99, min/max, ошибки по статус-кодам, примеры тел ответов с ошибками.
-- Экспорт отчёта в Markdown и JSON.
-- Пороги (thresholds): если p95 или процент ошибок выше заданного, утилита возвращает ненулевой код
-  выхода. Это позволяет использовать её в CI.
-- Метка прогона `loadrun=<id>` в query, чтобы отфильтровать свой прогон в Application Insights.
+- JSON scenario with IDE autocompletion (via JSON Schema).
+- Method, path, headers, query, body; weighted request mix.
+- Concurrency, total request count or duration, warmup, timeout.
+- Auth: bearer token, API key / function key, Azure Identity (`az login`),
+  OAuth2 client credentials, login through your own endpoint.
+- Secrets only from environment variables or `.env`, never in the scenario itself.
+- Templates for varied data: `{{guid}}`, `{{randomInt:1:100}}`, `{{seq}}`, `{{now}}`.
+- Report: RPS, p50/p95/p99, min/max, errors by status code, sample error response bodies.
+- Report export to Markdown and JSON.
+- Thresholds: if p95 or the error rate is above the given value, the tool returns a non-zero exit
+  code. This makes it usable in CI.
+- Run tag `loadrun=<id>` in the query string, to filter your run in Application Insights.
 
-## Быстрый старт
+## Quick start
 
 ```bash
-# 1. Установка (после публикации пакета)
+# 1. Install (after the package is published)
 dotnet tool install -g LoadKit
 
-# 2. Создать сценарий (задаст 2–3 вопроса: адрес API и как он защищён)
+# 2. Create a scenario (asks 2–3 questions: API address and how it is protected)
 loadtest init loadtests/scenarios/my-api.json
 
-# 3. Заполнить секреты в loadtests/.env (файл уже в .gitignore)
+# 3. Fill in secrets in loadtests/.env (the file is already in .gitignore)
 #    API_TOKEN=eyJ...
 
-# 4. Проверить сценарий без нагрузки
+# 4. Check the scenario without load
 loadtest validate loadtests/scenarios/my-api.json
 
-# 5. Один запрос на каждый endpoint: проверка доступности и авторизации
+# 5. One request per endpoint: checks availability and auth
 loadtest check loadtests/scenarios/my-api.json
 
-# 6. Нагрузка
+# 6. Load
 loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 ```
 
-Пример сценария:
+Example scenario:
 
 ```json
 {
@@ -94,44 +94,44 @@ loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 }
 ```
 
-## Чем инструмент НЕ является
+## What the tool is NOT
 
-- Не замена k6 / Azure Load Testing для продакшн-нагрузки и больших объёмов.
-- Не распределённый: нагрузка идёт с одной машины.
-- Не для цепочек запросов с передачей данных между шагами (в v1).
+- Not a replacement for k6 / Azure Load Testing for production load and large volumes.
+- Not distributed: load comes from a single machine.
+- Not for request chains that pass data between steps (in v1).
 
-## Работа через AI-ассистента
+## Working through an AI assistant
 
 ```bash
 loadtest ai install
 ```
 
-Команда ставит навык `loadtest` в проект (`.claude/skills/loadtest/`). После этого в Claude Code:
+The command installs the `loadtest` skill into the project (`.claude/skills/loadtest/`). Then in Claude Code:
 
 ```
-/loadtest нагрузи создание заказов, 30 параллельных, 2 минуты
+/loadtest load order creation, 30 concurrent, 2 minutes
 ```
 
-или просто «проведи нагрузочный тест GET /api/orders». Ассистент сам найдёт маршруты, напишет
-сценарий, проверит его, попросит добавить секреты в `.env`, запустит и перескажет отчёт.
-Для других AI-инструментов: `loadtest ai install --dir <путь>` или `--agents-md`.
+or just "run a load test on GET /api/orders". The assistant finds the routes, writes the
+scenario, checks it, asks you to add secrets to `.env`, runs it and summarizes the report.
+For other AI tools: `loadtest ai install --dir <path>` or `--agents-md`.
 
-## Документация
+## Documentation
 
-| Для кого | Куда смотреть |
+| For whom | Where to look |
 |---|---|
-| Пользователь | [docs/user/GETTING_STARTED.md](docs/user/GETTING_STARTED.md), [docs/user/CLI_REFERENCE.md](docs/user/CLI_REFERENCE.md) |
-| AI в вашем репозитории | [ai/skills/loadtest/](ai/skills/loadtest/SKILL.md) |
-| Разработчик LoadKit | [AGENTS.md](AGENTS.md), [docs/README.md](docs/README.md) |
-| Почему так | [docs/decisions/](docs/decisions/) |
+| User | [docs/user/GETTING_STARTED.md](docs/user/GETTING_STARTED.md), [docs/user/CLI_REFERENCE.md](docs/user/CLI_REFERENCE.md) |
+| AI in your repository | [ai/skills/loadtest/](ai/skills/loadtest/SKILL.md) |
+| LoadKit developer | [AGENTS.md](AGENTS.md), [docs/README.md](docs/README.md) |
+| Why it is built this way | [docs/decisions/](docs/decisions/) |
 
-## Коды выхода
+## Exit codes
 
-| Код | Значение |
+| Code | Meaning |
 |---|---|
-| 0 | Прогон успешен, пороги соблюдены |
-| 1 | Прогон завершён, но пороги нарушены |
-| 2 | Ошибка сценария (валидация) |
-| 3 | Preflight не прошёл (недоступен сервер или не получен токен) |
-| 4 | Нужно подтверждение для не-localhost URL (нет терминала и нет `--yes`) |
-| 130 | Прервано `Ctrl+C` (отчёт по собранным данным всё равно создаётся) |
+| 0 | Run succeeded, thresholds met |
+| 1 | Run completed, but thresholds were violated |
+| 2 | Scenario error (validation) |
+| 3 | Preflight failed (server unreachable or token not obtained) |
+| 4 | Confirmation required for a non-localhost URL (no terminal and no `--yes`) |
+| 130 | Interrupted with `Ctrl+C` (a report on the collected data is still created) |

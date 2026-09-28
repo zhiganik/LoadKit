@@ -1,18 +1,18 @@
-# Термины
+# Terms
 
-> Статус: ready
+> Status: ready
 
-| Термин | Значение |
+| Term | Meaning |
 |---|---|
-| Сценарий | JSON-файл с описанием нагрузки: цель, авторизация, запросы, параметры, пороги |
-| Concurrency | число запросов, одновременно находящихся «в полёте» |
-| Закрытая модель | новый запрос отправляется только после ответа на предыдущий в том же воркере |
-| Открытая модель | запросы отправляются с заданной частотой независимо от ответов (v2) |
-| Warmup | первые запросы, которые отправляются, но не учитываются в метриках |
-| Перцентиль pN | время, быстрее которого выполнилось N% запросов; nearest-rank |
-| Preflight | подготовка перед прогоном: получение токена и проверка доступности |
-| Порог (threshold) | предельное значение метрики; нарушение → код выхода 1 |
-| `loadrun` | метка прогона в query для фильтрации в Application Insights |
-| Горячий путь | цикл отправки запросов; любые лишние затраты искажают метрики |
-| Навык (skill) | папка с `SKILL.md` по стандарту Agent Skills, инструкция для AI-агента |
-| TargetApi | учебный API из `samples/` для тестов и демонстраций |
+| Scenario | A JSON file describing the load: target, auth, requests, parameters, thresholds |
+| Concurrency | Number of requests "in flight" at the same time |
+| Closed model | A new request is sent only after the response to the previous one in the same worker |
+| Open model | Requests are sent at a given rate regardless of responses (v2) |
+| Warmup | First requests that are sent but not counted in metrics |
+| Percentile pN | The time within which N% of requests completed; nearest-rank |
+| Preflight | Preparation before a run: acquiring a token and checking reachability |
+| Threshold | A limit for a metric; violation → exit code 1 |
+| `loadrun` | Run tag in the query string for filtering in Application Insights |
+| Hot path | The request sending loop; any extra overhead distorts metrics |
+| Skill | A folder with `SKILL.md` following the Agent Skills standard; instructions for an AI agent |
+| TargetApi | Sample API from `samples/` for tests and demos |

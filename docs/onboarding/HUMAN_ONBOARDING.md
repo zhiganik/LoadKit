@@ -1,41 +1,41 @@
-# Онбординг разработчика
+# Developer onboarding
 
-> Статус: draft
+> Status: draft
 
-## Требования
+## Requirements
 
 - .NET 10 SDK
-- Azure CLI (для проверки `azureIdentity`)
-- IDE: Rider / Visual Studio / VS Code с C# Dev Kit
-- Опционально: Claude Code или другой AI-агент
+- Azure CLI (to check `azureIdentity`)
+- IDE: Rider / Visual Studio / VS Code with C# Dev Kit
+- Optional: Claude Code or another AI agent
 
-## Первый запуск
+## First run
 
 ```bash
 git clone <repo> && cd LoadKit
 dotnet build
 dotnet test
-dotnet run --project samples/TargetApi                       # в отдельном терминале
+dotnet run --project samples/TargetApi                       # in a separate terminal
 dotnet run --project src/LoadKit.Cli -- run samples/scenarios/smoke.json
 ```
 
-## Локальная установка как tool
+## Local install as a tool
 
 ```bash
 dotnet pack src/LoadKit.Cli -c Release -o ./artifacts
 dotnet tool install -g LoadKit --add-source ./artifacts
 ```
 
-## Что прочитать
+## What to read
 
-1. `README.md` — зачем инструмент.
-2. `docs/decisions/*` — почему он такой.
-3. `docs/architecture/OVERVIEW.md` — как устроен.
-4. `AGENTS.md` — правила кода, тестов и коммитов.
-5. `docs/PLAN.md` — что делаем сейчас.
+1. `README.md` — why the tool exists.
+2. `docs/decisions/*` — why it is built this way.
+3. `docs/architecture/OVERVIEW.md` — how it works.
+4. `AGENTS.md` — rules for code, tests and commits.
+5. `docs/PLAN.md` — what we are doing now.
 
-## Работа с AI-агентом в этом репозитории
+## Working with an AI agent in this repository
 
-`CLAUDE.md` подключает `AGENTS.md`. Навыки `/adding-auth-provider` и `/changing-scenario-format`
-доступны в Claude Code. Попросить агента: «возьми следующую задачу из фазы 2 PLAN.md» — он найдёт
-нужные документы по `AGENT_ONBOARDING.md`.
+`CLAUDE.md` includes `AGENTS.md`. The `/adding-auth-provider` and `/changing-scenario-format` skills
+are available in Claude Code. Ask the agent: "take the next task from phase 2 of PLAN.md" — it will find
+the relevant documents via `AGENT_ONBOARDING.md`.

@@ -5,7 +5,7 @@
 - This file is the navigation layer for AI agents and humans working on LoadKit.
 - Detailed standards and architecture live in `docs/`.
 - Load only the docs relevant to the current task (do not bulk-load everything).
-- Documentation text is Russian; agent entry files (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`) are English.
+- All documentation, including agent entry files (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`), is written in English.
 
 ## Two AI audiences — do not mix them
 

@@ -1,26 +1,26 @@
-# ADR-002: Сначала консольное приложение, Core отдельно
+# ADR-002: Console application first, Core kept separate
 
-- **Статус:** accepted (ready)
-- **Дата:** 2026-09
+- **Status:** accepted (ready)
+- **Date:** 2026-09
 
-## Контекст
+## Context
 
-Рассматривались варианты: консольное приложение, десктоп (.NET: Avalonia/WPF), локальное веб-приложение.
-Нужно: быстро (дни, а не недели), удобно для AI-ассистентов, пригодно для CI.
+Options considered: a console application, a desktop app (.NET: Avalonia/WPF), a local web application.
+Requirements: fast (days, not weeks), convenient for AI assistants, usable in CI.
 
-## Решение
+## Decision
 
-v1 — консольный `dotnet tool`. Вся логика — в `LoadKit.Core`, который не знает про консоль.
-`LoadKit.Cli` — тонкая оболочка.
+v1 is a console `dotnet tool`. All logic lives in `LoadKit.Core`, which knows nothing about the console.
+`LoadKit.Cli` is a thin shell.
 
-## Почему
+## Why
 
-- Десктоп или веб добавляет формы, редакторы, графики и состояние экранов — это в 2–3 раза увеличивает срок.
-- AI-ассистент работает с файлами и командами; окна ему недоступны.
-- Консоль сразу пригодна для CI (коды выхода, пороги).
+- Desktop or web adds forms, editors, charts and screen state — that makes the timeline 2–3 times longer.
+- An AI assistant works with files and commands; windows are not accessible to it.
+- A console app is immediately usable in CI (exit codes, thresholds).
 
-## Последствия
+## Consequences
 
-- Будущая оболочка (например, `LoadKit.Desktop` на Avalonia) подключается к Core без его изменений
-  и работает с теми же JSON-сценариями.
-- Правило для Core: никакого вывода в консоль, прогресс — `IProgress<T>`, результат — объекты.
+- A future shell (for example, `LoadKit.Desktop` on Avalonia) connects to Core without changing it
+  and works with the same JSON scenarios.
+- Rule for Core: no console output; progress goes through `IProgress<T>`, results are objects.

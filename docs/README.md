@@ -1,47 +1,47 @@
-# Документация LoadKit
+# LoadKit documentation
 
-> Статус: ready
+> Status: ready
 
-Документация устроена в три слоя; при конфликте побеждает верхний (полный порядок — в `AGENTS.md`).
+Documentation has three layers; on conflict the upper one wins (full order in `AGENTS.md`).
 
-1. **Навигация** — `AGENTS.md`, `CLAUDE.md`.
-2. **Правила и устройство** — `docs/`.
-3. **Продукт для пользователей** — `docs/user/`, `ai/skills/loadtest/`.
+1. **Navigation** — `AGENTS.md`, `CLAUDE.md`.
+2. **Rules and design** — `docs/`.
+3. **Product for users** — `docs/user/`, `ai/skills/loadtest/`.
 
-Правила оформления: `standards/DOCUMENTATION.md`.
+Formatting rules: `standards/DOCUMENTATION.md`.
 
-## Индекс
+## Index
 
-### Онбординг
-- `onboarding/AGENT_ONBOARDING.md` — что читать агенту под тип задачи.
-- `onboarding/HUMAN_ONBOARDING.md` — быстрый старт разработчика.
+### Onboarding
+- `onboarding/AGENT_ONBOARDING.md` — what an agent reads for each task type.
+- `onboarding/HUMAN_ONBOARDING.md` — developer quick start.
 
-### Стандарты
-- `standards/STYLE_CSHARP.md` — стиль C#, горячий путь.
-- `standards/ARCHITECTURE.md` — слои, модули, публичные контракты, лицензии зависимостей.
-- `standards/DOCUMENTATION.md` — куда класть документ, язык, статус, навыки.
-- `standards/TESTING.md` — уровни тестов, обязательные тесты, TargetApi.
-- `standards/VERIFICATION.md` — команды проверки, CI.
-- `standards/COMMITS.md` — формат коммитов.
+### Standards
+- `standards/STYLE_CSHARP.md` — C# style, hot path.
+- `standards/ARCHITECTURE.md` — layers, modules, public contracts, dependency licenses.
+- `standards/DOCUMENTATION.md` — where to put a document, language, status, skills.
+- `standards/TESTING.md` — test levels, mandatory tests, TargetApi.
+- `standards/VERIFICATION.md` — verification commands, CI.
+- `standards/COMMITS.md` — commit format.
 
-### Архитектура
-- `architecture/OVERVIEW.md` — компоненты, поток выполнения, структура решения.
-- `architecture/SCENARIOS.md` — модель, загрузка, валидация, шаблоны.
-- `architecture/AUTH.md` — провайдеры, обновление токенов, безопасность.
-- `architecture/ENGINE.md` — движок, замер, перцентили, пороги.
-- `architecture/REPORTING_AND_CLI.md` — отчёты, команды, интерактивный init.
-- `architecture/AI_INTEGRATION.md` — навык `loadtest`, поставка, версионирование.
+### Architecture
+- `architecture/OVERVIEW.md` — components, execution flow, solution structure.
+- `architecture/SCENARIOS.md` — model, loading, validation, templates.
+- `architecture/AUTH.md` — providers, token refresh, security.
+- `architecture/ENGINE.md` — engine, measurement, percentiles, thresholds.
+- `architecture/REPORTING_AND_CLI.md` — reports, commands, interactive init.
+- `architecture/AI_INTEGRATION.md` — the `loadtest` skill, distribution, versioning.
 
-### Решения
-- `decisions/ADR-001-own-load-engine.md` — свой движок вместо NBomber, k6 и др.
-- `decisions/ADR-002-console-first.md` — консоль сначала, Core отдельно.
-- `decisions/ADR-003-ai-skill-distribution.md` — навык внутри инструмента.
+### Decisions
+- `decisions/ADR-001-own-load-engine.md` — own engine instead of NBomber, k6, etc.
+- `decisions/ADR-002-console-first.md` — console first, Core kept separate.
+- `decisions/ADR-003-ai-skill-distribution.md` — skill shipped inside the tool.
 
-### Для пользователей
-- `user/GETTING_STARTED.md` — первый запуск и авторизация.
-- `user/CLI_REFERENCE.md` — команды и флаги.
-- `../ai/skills/loadtest/SCENARIO_REFERENCE.md` — формат сценария.
+### For users
+- `user/GETTING_STARTED.md` — first run and auth.
+- `user/CLI_REFERENCE.md` — commands and flags.
+- `../ai/skills/loadtest/SCENARIO_REFERENCE.md` — scenario format.
 
-### Прочее
-- `PLAN.md` — фазы реализации и статус.
-- `glossary/TERMS.md` — термины.
+### Other
+- `PLAN.md` — implementation phases and status.
+- `glossary/TERMS.md` — terms.

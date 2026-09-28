@@ -1,121 +1,121 @@
-# План реализации
+# Implementation plan
 
-> Статус: draft. Агент перед задачей находит здесь фазу; по завершении отмечает пункты.
-> Ревизия 2: исправлены критерии готовности, валидация без сторонней JSON Schema-библиотеки,
-> поведение без терминала, встраивание навыка без копирования.
+> Status: draft. Before a task, an agent finds its phase here; when done, it checks off the items.
+> Revision 2: fixed readiness criteria, validation without a third-party JSON Schema library,
+> behavior without a terminal, embedding the skill without a copy.
 
-Один разработчик с AI-агентом, **5 рабочих дней**. Каждая фаза заканчивается рабочим, проверенным
-результатом и отдельными коммитами по `docs/standards/COMMITS.md`.
+One developer with an AI agent, **5 working days**. Each phase ends with a working, verified
+result and separate commits following `docs/standards/COMMITS.md`.
 
-## Раскладка по дням
+## Day-by-day breakdown
 
-| День | Фазы | Результат дня |
+| Day | Phases | Result of the day |
 |---|---|---|
-| 1 | 0 + 1 | каркас, TargetApi, `loadtest validate` работает |
-| 2 | 2 | `loadtest run` с bearer/apiKey, перцентили в консоли |
-| 3 | 3 | все типы авторизации, `loadtest check` |
-| 4 | 4 + начало 5 | отчёты, `init`, `ai install` |
-| 5 | конец 5 + 6 | проверка навыка на агенте, упаковка, демо |
+| 1 | 0 + 1 | skeleton, TargetApi, `loadtest validate` works |
+| 2 | 2 | `loadtest run` with bearer/apiKey, percentiles in the console |
+| 3 | 3 | all auth types, `loadtest check` |
+| 4 | 4 + start of 5 | reports, `init`, `ai install` |
+| 5 | end of 5 + 6 | skill check with an agent, packaging, demo |
 
-Если день затянулся — резерв берётся из фазы 4 (гистограмма, предупреждения о CPU переносятся в v2).
+If a day runs over, the buffer comes from phase 4 (histogram and CPU warnings move to v2).
 
 ---
 
-## Фаза 0. Основа репозитория — 0.5 дня
+## Phase 0. Repository foundation — 0.5 day
 
-- [x] Документация, `AGENTS.md`, `CLAUDE.md`, навыки, `.gitignore`, `.gitattributes`.
+- [x] Documentation, `AGENTS.md`, `CLAUDE.md`, skills, `.gitignore`, `.gitattributes`.
 - [ ] `LoadKit.sln`: `src/LoadKit.Core`, `src/LoadKit.Cli`, `samples/TargetApi`,
   `tests/LoadKit.Core.Tests`, `tests/LoadKit.IntegrationTests`.
 - [ ] `Directory.Build.props` (net10.0, nullable, warnings as errors), `Directory.Packages.props`, `.editorconfig`.
-- [ ] `samples/TargetApi` на `http://localhost:5080` со всеми endpoint'ами из `docs/standards/TESTING.md`,
-  включая `/secure`, `/auth/login`, `/oauth2/token`.
+- [ ] `samples/TargetApi` on `http://localhost:5080` with all endpoints from `docs/standards/TESTING.md`,
+  including `/secure`, `/auth/login`, `/oauth2/token`.
 - [ ] `samples/scenarios/`: `smoke.json`, `mix.json`, `secure-bearer.json`, `secure-login.json`.
 - [ ] CI (`.github/workflows/ci.yml`): build, format, test.
 
-**Готово, когда:** CI зелёный; `curl localhost:5080/health` → 200; `/secure` без токена → 401.
+**Done when:** CI is green; `curl localhost:5080/health` → 200; `/secure` without a token → 401.
 
-## Фаза 1. Сценарии и `validate` — 0.5 дня
+## Phase 1. Scenarios and `validate` — 0.5 day
 
-- [ ] Модель сценария (records), `ScenarioLoader`, `EnvFileLoader`.
-- [ ] `ScenarioValidator` поверх `JsonDocument`: неизвестные поля, типы, обязательные поля и все
-  семантические правила из `docs/architecture/SCENARIOS.md`. Собирает **все** ошибки с JSON-путями.
-- [ ] Проверка `secret-literal` — **до** подстановки `${env:}` (после подстановки секрет уже в значении).
-- [ ] Подстановка `${env:}`, `TemplateCompiler` и генераторы шаблонов.
-- [ ] `schemas/scenario.schema.json` — только для автодополнения в IDE; тест согласованности схемы и модели.
-- [ ] Команда `validate`: список ошибок, exit 2.
-- [ ] Docs-тесты: полные сценарии и фрагменты (`<!-- fragment:auth -->`) из `SCENARIO_REFERENCE.md`,
+- [ ] Scenario model (records), `ScenarioLoader`, `EnvFileLoader`.
+- [ ] `ScenarioValidator` on top of `JsonDocument`: unknown fields, types, required fields and all
+  semantic rules from `docs/architecture/SCENARIOS.md`. Collects **all** errors with JSON paths.
+- [ ] `secret-literal` check runs **before** `${env:}` substitution (after substitution the secret is already in the value).
+- [ ] `${env:}` substitution, `TemplateCompiler` and template generators.
+- [ ] `schemas/scenario.schema.json` — only for IDE autocompletion; a test that the schema matches the model.
+- [ ] `validate` command: list of errors, exit 2.
+- [ ] Docs tests: full scenarios and fragments (`<!-- fragment:auth -->`) from `SCENARIO_REFERENCE.md`,
   `samples/scenarios/*`.
 
-**Готово, когда:** сценарий с тремя разными ошибками показывает все три с путями и подсказками, exit 2;
-все примеры из документации проходят.
+**Done when:** a scenario with three different errors shows all three with paths and hints, exit 2;
+all documentation examples pass.
 
-## Фаза 2. Движок, метрики, `run` — 1 день
+## Phase 2. Engine, metrics, `run` — 1 day
 
 - [ ] `HttpPipelineFactory`, `LoadRunner`, `WeightedRequestPicker`, `RequestFactory`.
-- [ ] `ResultCollector`; `PercentileCalculator` на **целочисленной** арифметике ранга
-  (тесты: N=2000 → p95 = 1900-й, p99 = 1980-й; N=1; одинаковые значения).
-- [ ] `ThresholdEvaluator`, коды выхода 0/1.
-- [ ] Auth: `IAuthProvider`, `AuthHandler`, `bearer`, `apiKey` (заголовок и query), `SecretMasker`.
-- [ ] `run`: живой прогресс, итоговая таблица по запросам и общая, статус-коды, примеры ошибок.
-- [ ] Не-localhost URL: в терминале — вопрос; без терминала и без `--yes` — exit 4 с подсказкой.
-- [ ] `Ctrl+C` → отчёт по собранным данным, пометка «прервано», exit 130.
+- [ ] `ResultCollector`; `PercentileCalculator` with **integer** rank arithmetic
+  (tests: N=2000 → p95 = 1900th, p99 = 1980th; N=1; identical values).
+- [ ] `ThresholdEvaluator`, exit codes 0/1.
+- [ ] Auth: `IAuthProvider`, `AuthHandler`, `bearer`, `apiKey` (header and query), `SecretMasker`.
+- [ ] `run`: live progress, summary table per request and overall, status codes, sample errors.
+- [ ] Non-localhost URL: in a terminal, ask; without a terminal and without `--yes`, exit 4 with a hint.
+- [ ] `Ctrl+C` → report on the collected data, marked "interrupted", exit 130.
 
-**Готово, когда:** `run samples/scenarios/mix.json` против TargetApi показывает p50/p95/p99,
-ошибки `/api/fail` посчитаны как ожидаемые или неожиданные по `expect.status`.
+**Done when:** `run samples/scenarios/mix.json` against TargetApi shows p50/p95/p99,
+and `/api/fail` errors are counted as expected or unexpected according to `expect.status`.
 
-## Фаза 3. Авторизация полностью и `check` — 1 день
+## Phase 3. Full auth and `check` — 1 day
 
-- [ ] `TokenAuthProviderBase`: кэш, фоновое обновление на ~80% срока жизни, `MarkStale`,
-  одно обновление при параллельных запросах.
-- [ ] `login` (против `/auth/login`), `oauth2ClientCredentials` (против `/oauth2/token` TargetApi).
-- [ ] `azureIdentity`: `AzureCliCredential` по умолчанию, `source: "default"` → `DefaultAzureCredential`.
-- [ ] Preflight: первый токен + доступность `baseUrl`, exit 3 с конкретной подсказкой.
-- [ ] Команда `check`.
-- [ ] Тесты: `FakeTimeProvider` для обновления; fake `TokenCredential` для `azureIdentity`;
-  токен TargetApi со сроком 10 секунд в 30-секундном прогоне → нет 401 и нет всплеска p99.
+- [ ] `TokenAuthProviderBase`: cache, background refresh at ~80% of lifetime, `MarkStale`,
+  a single refresh under concurrent requests.
+- [ ] `login` (against `/auth/login`), `oauth2ClientCredentials` (against TargetApi `/oauth2/token`).
+- [ ] `azureIdentity`: `AzureCliCredential` by default, `source: "default"` → `DefaultAzureCredential`.
+- [ ] Preflight: first token + `baseUrl` reachability, exit 3 with a specific hint.
+- [ ] `check` command.
+- [ ] Tests: `FakeTimeProvider` for refresh; fake `TokenCredential` for `azureIdentity`;
+  a TargetApi token with a 10-second lifetime in a 30-second run → no 401s and no p99 spike.
 
-**Готово, когда:** `bearer`, `apiKey`, `login`, `oauth2ClientCredentials` проходят против `/secure`
-TargetApi; `azureIdentity` покрыт unit-тестами и один раз проверен вручную на реальном API
-(если есть API в Entra ID; иначе — отмечено как «проверено только тестами»).
+**Done when:** `bearer`, `apiKey`, `login`, `oauth2ClientCredentials` pass against TargetApi `/secure`;
+`azureIdentity` is covered by unit tests and checked manually once against a real API
+(if an Entra ID API is available; otherwise marked "verified by tests only").
 
-## Фаза 4. Отчёты и `init` — 0.5 дня
+## Phase 4. Reports and `init` — 0.5 day
 
-- [ ] `RunReport`, `report.md`, `report.json`, KQL по `loadrun`.
-- [ ] `tagRuns`, предупреждения: частые 401, прерывание, CPU тестера > 85% (можно перенести в v2).
-- [ ] Гистограмма (можно перенести в v2).
-- [ ] `init`: интерактивно в терминале, флагами без терминала; создаёт сценарий, `loadtests/.env` с пустыми
-  переменными, копирует `loadtests/scenario.schema.json`, дописывает `.gitignore`.
+- [ ] `RunReport`, `report.md`, `report.json`, KQL by `loadrun`.
+- [ ] `tagRuns`, warnings: frequent 401s, interruption, tester CPU > 85% (can move to v2).
+- [ ] Histogram (can move to v2).
+- [ ] `init`: interactive in a terminal, via flags without a terminal; creates the scenario, `loadtests/.env` with empty
+  variables, copies `loadtests/scenario.schema.json`, appends to `.gitignore`.
 
-**Готово, когда:** новый пользователь проходит `docs/user/GETTING_STARTED.md` без вопросов.
+**Done when:** a new user goes through `docs/user/GETTING_STARTED.md` without questions.
 
-## Фаза 5. AI-интеграция — 1 день
+## Phase 5. AI integration — 1 day
 
-- [ ] `ai/skills/loadtest/**` встраивается в `LoadKit.Cli` ссылкой из `.csproj` (без копии в репозитории).
-- [ ] `ai install` (`--global`, `--dir`, `--agents-md`), `ai status`, предупреждение о версии навыка.
-- [ ] Проверка навыка с агентом в чистой папке (TargetApi запущен):
-  - без навыка — записать, что агент делает не так (базовая линия);
-  - с навыком — «нагрузи /api/fast», «с токеном через логин», «на staging», «50 параллельных»;
-  - закрыть найденные лазейки в `SKILL.md`, повторить.
-- [ ] Обязательно закрыто: агент не пишет скрипт нагрузки, не вставляет секрет в JSON, не пропускает
-  `check`, получает подтверждение пользователя перед `--yes` для удалённого URL.
-- [ ] Записать результаты проверки в `docs/decisions/` или в PR — это материал для демо.
+- [ ] `ai/skills/loadtest/**` is embedded into `LoadKit.Cli` via a link from the `.csproj` (no copy in the repository).
+- [ ] `ai install` (`--global`, `--dir`, `--agents-md`), `ai status`, skill version warning.
+- [ ] Skill check with an agent in a clean folder (TargetApi running):
+  - without the skill — record what the agent does wrong (baseline);
+  - with the skill — "load /api/fast", "with a token via login", "on staging", "50 concurrent";
+  - close the loopholes found in `SKILL.md`, repeat.
+- [ ] Must be closed: the agent does not write a load script, does not put a secret into JSON, does not skip
+  `check`, gets user confirmation before `--yes` for a remote URL.
+- [ ] Record the check results in `docs/decisions/` or in the PR — this is material for the demo.
 
-**Готово, когда:** `/loadtest <задача>` в чистом проекте доводит до отчёта без ручных правок сценария.
+**Done when:** `/loadtest <task>` in a clean project gets to a report without manual scenario edits.
 
-## Фаза 6. Упаковка, релиз, демо — 0.5 дня
+## Phase 6. Packaging, release, demo — 0.5 day
 
-- [ ] `PackAsTool`, `ToolCommandName=loadtest`, `PackageId` (проверить уникальность; при публикации на
-  nuget.org — с префиксом, например `YourName.LoadKit`).
-- [ ] Установка из локального фида, прогон `GETTING_STARTED.md` с нуля.
-- [ ] Статусы документов `draft` → `ready` там, где код совпадает.
-- [ ] Демо: `/loadtest` → отчёт → графики в Application Insights.
+- [ ] `PackAsTool`, `ToolCommandName=loadtest`, `PackageId` (check uniqueness; when publishing to
+  nuget.org, use a prefix, e.g. `YourName.LoadKit`).
+- [ ] Install from a local feed, run through `GETTING_STARTED.md` from scratch.
+- [ ] Document statuses `draft` → `ready` where the code matches.
+- [ ] Demo: `/loadtest` → report → charts in Application Insights.
 
 ---
 
-## Кандидаты v2
+## v2 candidates
 
-- Тестовые данные: `setup`/`teardown` в сценарии, фидеры из CSV/JSON (`{{data.userId}}`), шаблон `{{runId}}`.
-- Открытая модель (фиксированный RPS) и стадии разгона.
-- `loadtest compare report-a.json report-b.json`, HTML-отчёт с графиками.
-- Цепочки запросов с передачей данных между шагами.
-- `LoadKit.Desktop` поверх Core (ADR-002).
+- Test data: `setup`/`teardown` in the scenario, CSV/JSON feeders (`{{data.userId}}`), `{{runId}}` template.
+- Open model (fixed RPS) and ramp-up stages.
+- `loadtest compare report-a.json report-b.json`, HTML report with charts.
+- Request chains passing data between steps.
+- `LoadKit.Desktop` on top of Core (ADR-002).

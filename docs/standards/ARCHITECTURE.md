@@ -1,53 +1,53 @@
-# Правила архитектуры
+# Architecture rules
 
-> Статус: ready. Как устроено приложение — в `docs/architecture/OVERVIEW.md`. Здесь — правила,
-> которые нельзя нарушать.
+> Status: ready. How the application is built is described in `docs/architecture/OVERVIEW.md`. This file
+> lists the rules that must not be broken.
 
-## Слои и зависимости
+## Layers and dependencies
 
 ```
 LoadKit.Cli  ──►  LoadKit.Core
 tests/*      ──►  LoadKit.Core, LoadKit.Cli, samples/TargetApi
 ```
 
-- `Core` не знает про `Cli`, консоль, Spectre.Console, DI-контейнер.
-- `Cli` — тонкая оболочка: разбор аргументов, вызов Core, отрисовка результата. Бизнес-логики в Cli нет.
-- Будущая оболочка (например, Desktop) подключается к Core так же, как Cli, без изменений Core.
+- `Core` knows nothing about `Cli`, the console, Spectre.Console or the DI container.
+- `Cli` is a thin shell: argument parsing, calling Core, rendering the result. There is no business logic in Cli.
+- A future shell (for example, Desktop) connects to Core the same way Cli does, without changes to Core.
 
-## Модули Core
+## Core modules
 
-| Модуль | Отвечает за | Не делает |
+| Module | Responsible for | Does not do |
 |---|---|---|
-| `Scenarios` | модель, загрузка, `.env`, `${env:}`, шаблоны, валидация (свой валидатор) | HTTP |
-| `Auth` | получение, кэш и подстановка токенов | замер времени |
-| `Engine` | воркеры, выбор запроса, отправка, замер | расчёт перцентилей |
-| `Metrics` | сбор результатов, перцентили, гистограмма, пороги | форматирование |
-| `Reporting` | модель отчёта, Markdown, JSON | вывод в консоль |
+| `Scenarios` | model, loading, `.env`, `${env:}`, templates, validation (own validator) | HTTP |
+| `Auth` | acquiring, caching and applying tokens | timing |
+| `Engine` | workers, request selection, sending, timing | percentile calculation |
+| `Metrics` | result collection, percentiles, histogram, thresholds | formatting |
+| `Reporting` | report model, Markdown, JSON | console output |
 
-Зависимости между модулями — только вниз по потоку выполнения:
-`Scenarios → Auth → Engine → Metrics → Reporting`. Обратные ссылки запрещены.
+Dependencies between modules go only downstream along the execution flow:
+`Scenarios → Auth → Engine → Metrics → Reporting`. Backward references are forbidden.
 
-## Контракты (публичные, меняются только осознанно)
+## Contracts (public, changed only deliberately)
 
-1. Формат сценария — `schemas/scenario.schema.json` + `SCENARIO_REFERENCE.md`.
-2. Команды и флаги CLI — `docs/user/CLI_REFERENCE.md`.
-3. Коды выхода — `0/1/2/3/4/130`.
-4. Схема `report.json`.
-5. Навык `ai/skills/loadtest/`.
+1. Scenario format — `schemas/scenario.schema.json` + `SCENARIO_REFERENCE.md`.
+2. CLI commands and flags — `docs/user/CLI_REFERENCE.md`.
+3. Exit codes — `0/1/2/3/4/130`.
+4. The `report.json` schema.
+5. The `ai/skills/loadtest/` skill.
 
-Изменение любого контракта — отдельный пункт в итоговом отчёте задачи. Ломающее изменение — ADR.
+Any contract change is a separate item in the task's final report. A breaking change requires an ADR.
 
-## Переиспользование
+## Reuse
 
-- Перед добавлением хелпера — поиск в Core: подстановка шаблонов, `.env`, маскирование секретов,
-  перцентили уже реализованы в одном месте.
-- Одна логика — одно место. Команды `check` и `run` используют один и тот же пайплайн `HttpClient`
-  и одни и те же auth-провайдеры.
+- Before adding a helper, search Core: template substitution, `.env`, secret masking and
+  percentiles are already implemented in one place.
+- One piece of logic, one place. The `check` and `run` commands use the same `HttpClient` pipeline
+  and the same auth providers.
 
-## Зависимости (пакеты)
+## Dependencies (packages)
 
-- Разрешены лицензии MIT, Apache-2.0, BSD. Перед добавлением пакета — проверка лицензии в PR.
-- Запрещены: NBomber v5+ (коммерческая лицензия, ADR-001), FluentAssertions v8+ (коммерческая лицензия),
-  Newtonsoft.Json.Schema (лимит бесплатных валидаций), JsonSchema.Net (EULA с платой за сопровождение).
-- Лицензию проверяем по файлу лицензии/EULA конкретной версии, а не по памяти: условия меняются.
-- Предпочтение — BCL. Новый пакет оправдан, если экономит больше, чем стоит его сопровождение.
+- Allowed licenses: MIT, Apache-2.0, BSD. Before adding a package, check its license in the PR.
+- Forbidden: NBomber v5+ (commercial license, ADR-001), FluentAssertions v8+ (commercial license),
+  Newtonsoft.Json.Schema (free validation quota), JsonSchema.Net (EULA with a maintenance fee).
+- Check the license from the license/EULA file of the specific version, not from memory: terms change.
+- Prefer the BCL. A new package is justified if it saves more than it costs to maintain.

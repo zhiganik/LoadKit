@@ -1,65 +1,65 @@
-# Движок нагрузки и метрики
+# Load engine and metrics
 
-> Статус: draft
+> Status: draft
 
-## Файлы
+## Files
 
 `Engine/`: `LoadRunner`, `WeightedRequestPicker`, `RequestFactory`, `HttpPipelineFactory`.
 `Metrics/`: `RequestResult`, `ResultCollector`, `PercentileCalculator`, `HistogramBuilder`, `ThresholdEvaluator`.
 
-## Модель нагрузки
+## Load model
 
-Закрытая модель: `concurrency` воркеров, каждый отправляет следующий запрос сразу после ответа.
-Это «N запросов в полёте», а не «N запросов в секунду». Открытая модель — v2.
+Closed model: `concurrency` workers, each sends the next request right after receiving a response.
+This means "N requests in flight", not "N requests per second". The open model is v2.
 
-## Движок
+## Engine
 
-- Один `HttpClient` на прогон. `SocketsHttpHandler`: `MaxConnectionsPerServer = concurrency`,
-  `PooledConnectionLifetime = 2 мин`, автоматическая декомпрессия.
-- Воркеры — `Task`'и. Номер следующего запроса — `Interlocked.Increment`; остановка при
-  достижении `totalRequests` или по истечении `durationSec`.
-- Первые `warmup` номеров отправляются, но в метрики не попадают.
-- Выбор запроса — префиксные суммы весов + бинарный поиск.
-- `Ctrl+C` → отмена; отчёт строится по собранным данным с пометкой «прервано».
-- Прогресс — `IProgress<RunProgress>` раз в 250 мс (отправлено, ошибки, текущий RPS).
+- One `HttpClient` per run. `SocketsHttpHandler`: `MaxConnectionsPerServer = concurrency`,
+  `PooledConnectionLifetime = 2 min`, automatic decompression.
+- Workers are `Task`s. The next request number comes from `Interlocked.Increment`; they stop when
+  `totalRequests` is reached or `durationSec` has elapsed.
+- The first `warmup` numbers are sent but not included in metrics.
+- Request selection: prefix sums of weights + binary search.
+- `Ctrl+C` → cancellation; the report is built from the collected data and marked "interrupted".
+- Progress: `IProgress<RunProgress>` every 250 ms (sent, errors, current RPS).
 
-## Замер
+## Measurement
 
-- От `Stopwatch.GetTimestamp()` перед `SendAsync` до полного чтения тела.
-- Не входит: сборка запроса, шаблоны, токен.
-- Таймаут — `CancellationTokenSource` на запрос, классифицируется как `Timeout`.
+- From `Stopwatch.GetTimestamp()` before `SendAsync` until the body is fully read.
+- Not included: building the request, templates, the token.
+- Timeout: a per-request `CancellationTokenSource`, classified as `Timeout`.
 
-## Сбор результатов
+## Result collection
 
 ```csharp
 readonly record struct RequestResult(
     int RequestIndex, int StatusCode, long ElapsedTicks, ErrorKind Error);
 ```
 
-- `totalRequests` известен → массив выделяется заранее, запись по номеру без блокировок.
-- `durationSec` → у каждого воркера свой `List<RequestResult>`, слияние в конце.
-- Примеры тел ответов с ошибками: до 5 на статус-код, до 2 КБ каждое.
+- `totalRequests` known → the array is preallocated, lock-free write by request number.
+- `durationSec` → each worker has its own `List<RequestResult>`, merged at the end.
+- Sample error response bodies: up to 5 per status code, up to 2 KB each.
 
 `ErrorKind`: `None`, `UnexpectedStatus`, `SlowResponse`, `Timeout`, `Connection`, `Tls`, `Other`.
 
-## Перцентили
+## Percentiles
 
-Nearest-rank: сортировка длительностей, P-й перцентиль — элемент с рангом `ceil(P/100 × N)`
-(индекс `ранг − 1`). Для N = 2000: p50 — 1000-й, p95 — 1900-й, p99 — 1980-й.
+Nearest-rank: sort the durations; the P-th percentile is the element with rank `ceil(P/100 × N)`
+(index `rank − 1`). For N = 2000: p50 is the 1000th, p95 the 1900th, p99 the 1980th.
 
-Ранг считается **в целых числах**: `rank = (P × N + 99) / 100` для целого P. В `double`
-`0.95 × 2000` может дать `1900.0000000000002`, и `ceil` вернёт 1901 — на один запрос дальше.
+The rank is computed **in integers**: `rank = (P × N + 99) / 100` for integer P. In `double`,
+`0.95 × 2000` may give `1900.0000000000002`, and `ceil` returns 1901 — one request too far.
 
-- Считается по каждому запросу сценария и по всем вместе.
-- Перцентили не усредняются между группами; итог — по всем сырым данным.
-- RPS = число учтённых запросов / длительность основного прогона.
+- Computed per scenario request and for all requests together.
+- Percentiles are not averaged across groups; the total is computed from all raw data.
+- RPS = number of counted requests / main run duration.
 
-## Пороги
+## Thresholds
 
-`ThresholdEvaluator` сравнивает итоговые p50/p95/p99 и процент ошибок с `thresholds`.
-Результат — список проверок (порог, факт, ok/fail) для отчёта и код выхода.
+`ThresholdEvaluator` compares the overall p50/p95/p99 and the error rate with `thresholds`.
+The result is a list of checks (threshold, actual, ok/fail) for the report and the exit code.
 
-## Ограничения точности
+## Accuracy limits
 
-Тестер и API на одной машине делят CPU — цифры годятся для сравнения «до/после», не как абсолют.
-При загрузке CPU тестера > 85% отчёт содержит предупреждение.
+The tester and the API on the same machine share the CPU — the numbers are good for "before/after" comparison, not as absolutes.
+If the tester's CPU load exceeds 85%, the report contains a warning.

@@ -1,8 +1,8 @@
-# Проверки
+# Verification
 
-> Статус: ready
+> Status: ready
 
-## Команды
+## Commands
 
 ```bash
 dotnet build -warnaserror
@@ -10,32 +10,32 @@ dotnet format --verify-no-changes
 dotnet test
 ```
 
-Быстрые варианты:
+Fast variants:
 
 ```bash
-dotnet test --filter Category!=Integration   # только unit + docs
-dotnet test --filter Category=Docs           # только примеры в документации
+dotnet test --filter Category!=Integration   # unit + docs only
+dotnet test --filter Category=Docs           # documentation examples only
 ```
 
-## Что запускать по типу изменения
+## What to run by change type
 
-| Изменение | build | format | тесты |
+| Change | build | format | tests |
 |---|---|---|---|
-| Логика Core | ✓ | ✓ | полный набор + новый целевой тест |
-| Формат сценария | ✓ | ✓ | полный набор, включая Docs |
-| Вывод CLI | ✓ | ✓ | интеграционные |
-| Только документация | — | — | `Category=Docs` + ручной аудит |
-| Рефакторинг | ✓ | ✓ | полный набор |
+| Core logic | ✓ | ✓ | full suite + new targeted test |
+| Scenario format | ✓ | ✓ | full suite, including Docs |
+| CLI output | ✓ | ✓ | integration |
+| Documentation only | — | — | `Category=Docs` + manual audit |
+| Refactoring | ✓ | ✓ | full suite |
 
 ## CI
 
-GitHub Actions / Azure Pipelines на каждый PR:
+GitHub Actions / Azure Pipelines on every PR:
 1. `dotnet build -warnaserror`
 2. `dotnet format --verify-no-changes`
-3. `dotnet test` (с интеграционными)
-4. `loadtest validate samples/scenarios/*.json` собранным инструментом
-5. Тест, что собранный `LoadKit.Cli` содержит все файлы `ai/skills/loadtest/**` и схему
+3. `dotnet test` (including integration)
+4. `loadtest validate samples/scenarios/*.json` with the built tool
+5. A test that the built `LoadKit.Cli` contains all `ai/skills/loadtest/**` files and the schema
 
-## Pre-commit (опционально)
+## Pre-commit (optional)
 
-`dotnet format` на изменённых файлах через Husky.Net или git hook.
+`dotnet format` on changed files via Husky.Net or a git hook.
