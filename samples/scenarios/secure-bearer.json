@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "secure-bearer",
+  "description": "Static bearer token from .env; TargetApi accepts its dev token",
+  "baseUrl": "http://localhost:5080",
+  "auth": { "type": "bearer", "token": "${env:TARGETAPI_TOKEN}" },
+  "load": { "concurrency": 5, "totalRequests": 200 },
+  "requests": [
+    { "name": "secure", "method": "GET", "path": "/secure", "weight": 9, "expect": { "status": [200] } },
+    { "name": "no-auth", "method": "GET", "path": "/secure", "weight": 1, "auth": false, "expect": { "status": [401] } }
+  ],
+  "thresholds": { "errorRatePercent": 0 }
+}

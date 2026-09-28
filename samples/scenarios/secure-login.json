@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "secure-login",
+  "description": "Token from TargetApi /auth/login; the 10 s lifetime exercises background refresh",
+  "baseUrl": "http://localhost:5080",
+  "auth": {
+    "type": "login",
+    "request": {
+      "method": "POST",
+      "path": "/auth/login",
+      "body": { "email": "${env:TARGETAPI_USER}", "password": "${env:TARGETAPI_PASSWORD}" }
+    },
+    "tokenPath": "$.accessToken",
+    "expiresInPath": "$.expiresIn"
+  },
+  "load": { "concurrency": 10, "durationSec": 30 },
+  "requests": [
+    { "name": "secure", "method": "GET", "path": "/secure", "expect": { "status": [200] } }
+  ],
+  "thresholds": { "errorRatePercent": 0 }
+}

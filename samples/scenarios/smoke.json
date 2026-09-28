@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "smoke",
+  "description": "Minimal check that TargetApi responds quickly",
+  "baseUrl": "http://localhost:5080",
+  "load": { "concurrency": 5, "totalRequests": 200, "warmup": 10 },
+  "requests": [
+    { "name": "health", "method": "GET", "path": "/health", "expect": { "status": [200] } }
+  ],
+  "thresholds": { "p95Ms": 200, "errorRatePercent": 0 }
+}

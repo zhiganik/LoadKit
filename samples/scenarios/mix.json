@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "name": "mix",
+  "description": "Weighted mix of fast, slow, dependency and failing endpoints; 500 from /api/fail is expected",
+  "baseUrl": "http://localhost:5080",
+  "load": { "concurrency": 10, "totalRequests": 1000, "warmup": 20 },
+  "requests": [
+    { "name": "fast", "method": "GET", "path": "/api/fast", "weight": 60, "expect": { "status": [200] } },
+    { "name": "slow", "method": "GET", "path": "/api/slow", "weight": 20, "expect": { "status": [200] } },
+    { "name": "dep", "method": "GET", "path": "/api/dep", "weight": 10, "expect": { "status": [200] } },
+    { "name": "fail", "method": "GET", "path": "/api/fail", "weight": 10, "expect": { "status": [200, 500] } }
+  ],
+  "thresholds": { "p95Ms": 1000 }
+}

@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LoadKit.Core/LoadKit.Core.csproj" />
+    <Project Path="src/LoadKit.Cli/LoadKit.Cli.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/TargetApi/TargetApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LoadKit.Core.Tests/LoadKit.Core.Tests.csproj" />
+    <Project Path="tests/LoadKit.IntegrationTests/LoadKit.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
