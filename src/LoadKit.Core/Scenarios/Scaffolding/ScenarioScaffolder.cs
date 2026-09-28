@@ -134,6 +134,9 @@ public static class ScenarioScaffolder
                     ["body"] = new JsonObject { ["email"] = "${env:LOGIN_USER}", ["password"] = "${env:LOGIN_PASSWORD}" },
                 },
                 ["tokenPath"] = "$.accessToken",
+
+                // Without a lifetime the token is never refreshed; if the API has no expiresIn, preflight says to remove it.
+                ["expiresInPath"] = "$.expiresIn",
             },
             _ => null,
         };
