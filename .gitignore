@@ -459,3 +459,6 @@ artifacts/
 
 # Claude Code local settings (shared skills stay committed)
 .claude/settings.local.json
+
+# dotnet tool installed by CI smoke test
+.tools/

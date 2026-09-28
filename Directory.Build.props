@@ -8,5 +8,12 @@
     <Deterministic>true</Deterministic>
     <!-- Tool version; the ai/skills/loadtest SKILL.md metadata loadkit-version must match major.minor. -->
     <Version>1.0.0</Version>
+    <!-- Only LoadKit.Cli is shipped (as a dotnet tool); Core goes inside the tool package. -->
+    <IsPackable>false</IsPackable>
+    <Authors>zhiganik</Authors>
+    <RepositoryUrl>https://github.com/zhiganik/LoadKit</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/zhiganik/LoadKit</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright (c) 2026 zhiganik</Copyright>
   </PropertyGroup>
 </Project>

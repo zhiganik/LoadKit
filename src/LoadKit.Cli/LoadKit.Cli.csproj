@@ -6,6 +6,24 @@
     <RootNamespace>LoadKit.Cli</RootNamespace>
   </PropertyGroup>
 
+  <!-- dotnet tool: dotnet tool install -g LoadKit → command `loadtest`. -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>loadtest</ToolCommandName>
+    <PackageId>LoadKit</PackageId>
+    <Title>LoadKit</Title>
+    <Description>Local HTTP load testing from a JSON scenario: p50/p95/p99, errors by status code, Markdown/JSON reports, threshold exit codes, token auth (bearer, API key, login, OAuth2, Entra ID), and a skill for AI assistants.</Description>
+    <PackageTags>load-testing;performance;http;percentiles;cli;dotnet-tool;ai-skill</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Run on newer .NET runtimes too when .NET 10 is not installed. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\LoadKit.Core\LoadKit.Core.csproj" />
   </ItemGroup>
