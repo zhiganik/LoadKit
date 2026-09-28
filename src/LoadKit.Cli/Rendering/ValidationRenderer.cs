@@ -8,10 +8,7 @@ internal static class ValidationRenderer
 {
     public static void Render(IAnsiConsole console, string scenarioFilePath, ScenarioLoadResult result)
     {
-        foreach (var issue in result.Issues)
-        {
-            RenderIssue(console, issue);
-        }
+        RenderIssues(console, result.Issues);
 
         var escapedPath = Markup.Escape(scenarioFilePath);
         if (result.Scenario is { } scenario)
@@ -22,6 +19,14 @@ internal static class ValidationRenderer
         else
         {
             console.MarkupLine($"[red]Invalid:[/] {escapedPath} ({result.ErrorCount} error(s), {result.WarningCount} warning(s))");
+        }
+    }
+
+    public static void RenderIssues(IAnsiConsole console, IReadOnlyList<ValidationIssue> issues)
+    {
+        foreach (var issue in issues)
+        {
+            RenderIssue(console, issue);
         }
     }
 

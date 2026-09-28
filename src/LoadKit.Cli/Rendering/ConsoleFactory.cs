@@ -10,6 +10,9 @@ internal static class ConsoleFactory
 {
     private const int RedirectedOutputWidth = 1000;
 
+    /// <summary>A person can answer prompts and watch live progress. False for CI, scripts and AI agents.</summary>
+    public static bool IsInteractiveTerminal => !Console.IsInputRedirected && !Console.IsOutputRedirected;
+
     public static IAnsiConsole Create()
     {
         if (!Console.IsOutputRedirected)
