@@ -19,11 +19,15 @@ loadtest init loadtests/scenarios/my-api.json
 
 ```
 loadtests/
-  scenarios/my-api.json   ← scenario
+  scenarios/my-api.json   ← scenario with one placeholder request: put your endpoints there
   scenario.schema.json    ← IDE autocompletion
   .env                    ← required variables (empty), in .gitignore
-  reports/                ← in .gitignore
+  reports/                ← created by the first run, in .gitignore
 ```
+
+In scripts or through an AI assistant there are no questions; pass the answers as flags:
+`loadtest init loadtests/scenarios/my-api.json --base-url http://localhost:5000 --auth bearer`.
+`init` ends with a numbered list of next steps.
 
 ## 3. Auth: where to get the token
 
@@ -105,6 +109,10 @@ loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 
 If `baseUrl` is not localhost, LoadKit asks for confirmation. In scripts and CI, add `--yes`.
 
+The console shows percentiles per request, status codes, errors and threshold checks. `--out` also writes
+`loadtests/reports/<time>-<scenario>/report.md` (for reading and for AI assistants) and `report.json` (for tools).
+Exit code `0` means the thresholds passed, `1` that at least one failed.
+
 ## 6. Working through an AI assistant
 
 ```bash
@@ -117,10 +125,14 @@ asks you to add secrets to `.env` and summarizes the report.
 
 ## 7. Find the run in Application Insights
 
-The report contains the `loadrun` id and a ready-made query:
+Every request carries `loadrun=<id>` in the query string (turn off with `"tagRuns": false` or `--no-tag`).
+The "Application Insights" section of `report.md` has a ready-made query, for example:
 
 ```kusto
 requests
-| where url contains "loadrun=<id>"
-| summarize p50=percentile(duration,50), p95=percentile(duration,95), p99=percentile(duration,99)
+| where timestamp between (datetime(2026-09-28T14:43:22Z) .. datetime(2026-09-28T14:53:22Z))
+| where url contains "loadrun=20260928-144822-ff27"
+| summarize requests = count(), failures = countif(success == false),
+    p50 = percentile(duration, 50), p95 = percentile(duration, 95), p99 = percentile(duration, 99) by name
+| order by requests desc
 ```

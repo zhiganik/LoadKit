@@ -15,6 +15,15 @@ Creates a scenario, a `.env` template and `.gitignore` entries.
 | `--header <name>` | for `apiKey` (default `x-functions-key`) |
 | `--no-interactive` | do not ask questions (automatic when there is no terminal) |
 
+Without a terminal `--base-url` is required; `--scope` is required for `azureIdentity` and `oauth2ClientCredentials`.
+Creates the scenario, `loadtests/scenario.schema.json`, `loadtests/.env` (required variables, empty) and adds
+`loadtests/.env` and `loadtests/reports/` to `.gitignore`. Existing `.env` values are kept; an existing scenario is
+never overwritten. Exit code `0`, or `2` for missing or invalid answers and an existing scenario file.
+
+## `loadtest --version`
+
+Prints the tool version.
+
 ## `loadtest validate <file>`
 
 Checks the format and variables, sends nothing. Exit code `0` or `2`.
@@ -59,10 +68,13 @@ confirmation rules apply as for `run`.
 | `--yes` | confirm a non-localhost URL in advance |
 
 `--total` or `--duration` replaces the load mode of the scenario; passing both is an error (exit `2`).
-`--out` and report files arrive with reports (see `docs/PLAN.md`, phase 4); until then `run` prints the summary only.
+With `--out <dir>`, `run` writes `<dir>/<yyyyMMdd-HHmmss>-<scenario-name>/report.md` and `report.json` (also for an
+interrupted run) and prints the path. Without `--out` only the console summary is printed.
+`report.json` follows `schemas/report.schema.json` (a public contract, versioned by `schemaVersion`).
 
 Output: live progress in a terminal, then tables per request and overall (count, errors, RPS, min/mean/p50/p95/p99/max),
-status codes, errors by kind, sample errors and threshold checks. When output is redirected, there is no live
+status codes, errors by kind, sample errors, threshold checks and warnings (interrupted run, unexpected 401s,
+failed token refresh, load generator CPU above 85%, fewer than 100 measured requests). When output is redirected, there is no live
 progress and the tables are Markdown. The first `Ctrl+C` stops the run and prints the partial results (exit `130`);
 a second one terminates immediately.
 

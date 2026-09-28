@@ -32,7 +32,7 @@ Dependencies between modules go only downstream along the execution flow:
 1. Scenario format — `schemas/scenario.schema.json` + `SCENARIO_REFERENCE.md`.
 2. CLI commands and flags — `docs/user/CLI_REFERENCE.md`.
 3. Exit codes — `0/1/2/3/4/130`.
-4. The `report.json` schema.
+4. The `report.json` schema — `schemas/report.schema.json`, versioned by `schemaVersion`.
 5. The `ai/skills/loadtest/` skill.
 
 Any contract change is a separate item in the task's final report. A breaking change requires an ADR.

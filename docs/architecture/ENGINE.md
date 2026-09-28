@@ -7,7 +7,7 @@
 `Engine/`: `LoadRunner` (public entry) and `LoadRun` (state of one run, the worker loop), `WeightedRequestPicker`,
 `RequestFactory`, `HttpPipelineFactory`, `RunOptions`, `RunProgress`, `RunResult`, `RunIdGenerator`.
 `Metrics/`: `RequestResult`, `ResultCollector`, `ErrorSampleCollector`, `PercentileCalculator`,
-`RunStatisticsCalculator`, `ThresholdEvaluator`; `HistogramBuilder` comes with reports (phase 4).
+`RunStatisticsCalculator`, `HistogramBuilder`, `ThresholdEvaluator`.
 
 ## Load model
 
@@ -75,4 +75,5 @@ A value equal to the limit passes. A latency threshold with no responses at all 
 ## Accuracy limits
 
 The tester and the API on the same machine share the CPU — the numbers are good for "before/after" comparison, not as absolutes.
-If the tester's CPU load exceeds 85%, the report contains a warning.
+If the tester's CPU load exceeds 85%, the report contains a warning. It is measured as the average CPU of the LoadKit
+process over the run (`Process.TotalProcessorTime` across all cores), not the whole machine.

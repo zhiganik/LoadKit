@@ -71,18 +71,20 @@ flowchart TD
 ```
 src/LoadKit.Core/
   Scenarios/   ScenarioLoader, EnvFileLoader, ScenarioValidator (own, no library), ScenarioCompiler,
-               Model/, Validation/ (format spec + rules), Templates/ (TemplateCompiler, generators)
+               Model/, Validation/ (format spec + rules), Templates/ (TemplateCompiler, generators),
+               Scaffolding/ (init: ScenarioScaffolder, WorkspaceInitializer)
   Auth/        IAuthProvider, TokenAuthProviderBase, AuthHandler, AuthProviderFactory, Providers/, SecretMasker
   Engine/      LoadRunner (+ LoadRun, one run's state), WeightedRequestPicker, RequestFactory, HttpPipelineFactory,
                PreflightChecker (baseUrl + first token), ScenarioChecker (check: one request per entry)
-  Metrics/     RequestResult, ResultCollector, PercentileCalculator, RunStatisticsCalculator, ThresholdEvaluator
-  Reporting/   RunReport, MarkdownReportWriter, JsonReportWriter
+  Metrics/     RequestResult, ResultCollector, PercentileCalculator, RunStatisticsCalculator, HistogramBuilder,
+               ThresholdEvaluator
+  Reporting/   RunReport, RunReportBuilder (warnings, KQL), MarkdownReportWriter, JsonReportWriter, ReportFileWriter
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
   Rendering/   ConsoleFactory (plain output when redirected), ProgressTaskReporter, RunSummaryRenderer, ValidationRenderer
-  (csproj)     embeds ai/skills/loadtest/** and schemas/ by link, without a copy
+  (csproj)     embeds schemas/scenario.schema.json (and, from phase 5, ai/skills/loadtest/**) by link, without a copy
 samples/TargetApi, samples/scenarios
-schemas/scenario.schema.json
+schemas/scenario.schema.json, schemas/report.schema.json
 ```
 
 ## v1 limitations

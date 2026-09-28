@@ -90,11 +90,15 @@ and `/api/fail` errors are counted as expected or unexpected according to `expec
 
 ## Phase 4. Reports and `init` — 0.5 day
 
-- [ ] `RunReport`, `report.md`, `report.json`, KQL by `loadrun`; `run --out`.
-- [ ] `tagRuns` in the report (the query tag itself is done in phase 2), warnings: frequent 401s, interruption, tester CPU > 85% (can move to v2).
-- [ ] Histogram (can move to v2).
-- [ ] `init`: interactive in a terminal, via flags without a terminal; creates the scenario, `loadtests/.env` with empty
+- [x] `RunReport`, `report.md`, `report.json`, KQL by `loadrun`; `run --out`.
+  `schemas/report.schema.json` is the contract, checked by `ReportSchemaConsistencyTests`.
+- [x] `tagRuns` in the report (the query tag itself is done in phase 2), warnings: frequent 401s, interruption, tester CPU > 85%
+  (process CPU), plus token refresh failures and fewer than 100 measured requests.
+- [x] Histogram (fixed 1-2-5 bounds).
+- [x] `init`: interactive in a terminal, via flags without a terminal; creates the scenario, `loadtests/.env` with empty
   variables, copies `loadtests/scenario.schema.json`, appends to `.gitignore`.
+  Flags path is covered by integration tests; the interactive prompts still need a manual check in a real terminal.
+- [x] `--version` (used by GETTING_STARTED and the skill).
 
 **Done when:** a new user goes through `docs/user/GETTING_STARTED.md` without questions.
 
