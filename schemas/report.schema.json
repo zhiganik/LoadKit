@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loadkit.dev/schemas/report.schema.json",
+  "title": "LoadKit report.json",
+  "description": "Public contract. Produced by `loadtest run --out`. Changes require a new schemaVersion (breaking changes: an ADR). Kept in sync with LoadKit.Core/Reporting by ReportSchemaConsistencyTests.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "scenario", "run", "load", "overall", "requests", "histogram", "thresholds", "thresholdsPassed", "errorSamples", "warnings", "applicationInsights"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "toolVersion": { "type": "string" },
+    "scenario": { "$ref": "#/$defs/scenario" },
+    "run": { "$ref": "#/$defs/run" },
+    "load": { "$ref": "#/$defs/load" },
+    "overall": { "$ref": "#/$defs/requestStatistics" },
+    "requests": { "type": "array", "items": { "$ref": "#/$defs/requestStatistics" } },
+    "histogram": { "type": "array", "items": { "$ref": "#/$defs/histogramBucket" } },
+    "thresholds": { "type": "array", "items": { "$ref": "#/$defs/thresholdCheck" } },
+    "thresholdsPassed": { "type": ["boolean", "null"], "description": "null when the scenario has no thresholds" },
+    "errorSamples": { "type": "array", "items": { "$ref": "#/$defs/errorSample" } },
+    "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
+    "applicationInsights": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/applicationInsights" }],
+      "description": "null when the run was not tagged with loadrun"
+    }
+  },
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "baseUrl", "authType"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": ["string", "null"] },
+        "baseUrl": { "type": "string", "description": "masked" },
+        "authType": { "type": ["string", "null"], "enum": ["bearer", "apiKey", "azureIdentity", "oauth2ClientCredentials", "login", null] }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "startedAt", "elapsedSeconds", "measuredSeconds", "interrupted", "testerCpuPercent"],
+      "properties": {
+        "runId": { "type": ["string", "null"], "description": "loadrun query value" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "elapsedSeconds": { "type": "number" },
+        "measuredSeconds": { "type": "number" },
+        "interrupted": { "type": "boolean" },
+        "testerCpuPercent": { "type": ["number", "null"] }
+      }
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concurrency", "totalRequests", "durationSec", "warmup", "timeoutMs"],
+      "properties": {
+        "concurrency": { "type": "integer" },
+        "totalRequests": { "type": ["integer", "null"] },
+        "durationSec": { "type": ["integer", "null"] },
+        "warmup": { "type": "integer" },
+        "timeoutMs": { "type": "integer" }
+      }
+    },
+    "requestStatistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "method", "path", "count", "successful", "errors", "errorRatePercent", "requestsPerSecond", "latencyMs", "statusCodes", "errorKinds"],
+      "properties": {
+        "name": { "type": "string" },
+        "method": { "type": ["string", "null"], "description": "null for overall" },
+        "path": { "type": ["string", "null"], "description": "null for overall" },
+        "count": { "type": "integer" },
+        "successful": { "type": "integer" },
+        "errors": { "type": "integer" },
+        "errorRatePercent": { "type": "number" },
+        "requestsPerSecond": { "type": "number" },
+        "latencyMs": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/latency" }] },
+        "statusCodes": { "type": "array", "items": { "$ref": "#/$defs/statusCode" } },
+        "errorKinds": { "type": "array", "items": { "$ref": "#/$defs/errorKind" } }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "mean", "p50", "p95", "p99", "max"],
+      "properties": {
+        "min": { "type": "number" },
+        "mean": { "type": "number" },
+        "p50": { "type": "number" },
+        "p95": { "type": "number" },
+        "p99": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+    "statusCode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "count", "unexpected"],
+      "properties": {
+        "status": { "type": "integer" },
+        "count": { "type": "integer" },
+        "unexpected": { "type": "integer" }
+      }
+    },
+    "errorKind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "count"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["UnexpectedStatus", "SlowResponse", "Timeout", "Connection", "Tls", "Other"] },
+        "count": { "type": "integer" }
+      }
+    },
+    "histogramBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromMs", "toMs", "count"],
+      "properties": {
+        "fromMs": { "type": "number" },
+        "toMs": { "type": ["number", "null"], "description": "null for the last, open bucket" },
+        "count": { "type": "integer" }
+      }
+    },
+    "thresholdCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "limit", "actual", "passed"],
+      "properties": {
+        "name": { "type": "string", "enum": ["p50Ms", "p95Ms", "p99Ms", "errorRatePercent"] },
+        "limit": { "type": "number" },
+        "actual": { "type": ["number", "null"] },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "errorSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "status", "error", "text"],
+      "properties": {
+        "request": { "type": "string" },
+        "status": { "type": "integer", "description": "0 when there was no response" },
+        "error": { "type": "string", "enum": ["UnexpectedStatus", "SlowResponse", "Timeout", "Connection", "Tls", "Other"] },
+        "text": { "type": "string", "description": "masked" }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "enum": ["interrupted", "unauthorized-responses", "token-refresh-failed", "tester-cpu", "few-requests"] },
+        "message": { "type": "string" }
+      }
+    },
+    "applicationInsights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "kql"],
+      "properties": {
+        "runId": { "type": "string" },
+        "kql": { "type": "string" }
+      }
+    }
+  }
+}
