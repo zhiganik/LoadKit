@@ -57,27 +57,27 @@ loadtest run scenarios/orders.json
 # 1. Установка (после публикации пакета)
 dotnet tool install -g LoadKit
 
-# 2. Создать пример сценария
-loadtest init scenarios/my-api.json
+# 2. Создать сценарий (задаст 2–3 вопроса: адрес API и как он защищён)
+loadtest init loadtests/scenarios/my-api.json
 
-# 3. Положить секреты в .env (файл в .gitignore)
-echo "API_TOKEN=eyJ..." > .env
+# 3. Заполнить секреты в loadtests/.env (файл уже в .gitignore)
+#    API_TOKEN=eyJ...
 
 # 4. Проверить сценарий без нагрузки
-loadtest validate scenarios/my-api.json
+loadtest validate loadtests/scenarios/my-api.json
 
 # 5. Один запрос на каждый endpoint: проверка доступности и авторизации
-loadtest check scenarios/my-api.json
+loadtest check loadtests/scenarios/my-api.json
 
 # 6. Нагрузка
-loadtest run scenarios/my-api.json --out reports/
+loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 ```
 
 Пример сценария:
 
 ```json
 {
-  "$schema": "https://loadkit.local/schemas/scenario.v1.json",
+  "$schema": "../scenario.schema.json",
   "version": 1,
   "name": "orders-smoke",
   "baseUrl": "https://localhost:5001",
@@ -133,3 +133,5 @@ loadtest ai install
 | 1 | Прогон завершён, но пороги нарушены |
 | 2 | Ошибка сценария (валидация) |
 | 3 | Preflight не прошёл (недоступен сервер или не получен токен) |
+| 4 | Нужно подтверждение для не-localhost URL (нет терминала и нет `--yes`) |
+| 130 | Прервано `Ctrl+C` (отчёт по собранным данным всё равно создаётся) |

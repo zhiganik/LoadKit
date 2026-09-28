@@ -24,9 +24,10 @@ Request details when invoked as a command: $ARGUMENTS
 - Layout in the user's repo:
   ```
   loadtests/
-    scenarios/*.json   # committed
-    reports/           # gitignored
-    .env               # gitignored, secrets
+    scenarios/*.json       # committed
+    scenario.schema.json   # committed, IDE autocompletion
+    reports/               # gitignored
+    .env                   # gitignored, secrets
   ```
   If `loadtests/` is missing: `loadtest init loadtests/scenarios/<name>.json --base-url <url> --auth <type>`.
 
@@ -42,8 +43,10 @@ Request details when invoked as a command: $ARGUMENTS
    Never ask the user to paste a secret into chat. Never read or print `.env`.
 6. **Check.** `loadtest check <file>`. Any unexpected status (especially 401/403/404) → stop and report.
 7. **Safety gate.** If `baseUrl` is not `localhost`/`127.0.0.1`, show URL, concurrency and
-   total/duration and wait for explicit confirmation before running.
-8. **Run.** `loadtest run <file> --out loadtests/reports/`.
+   total/duration and wait for explicit user confirmation. Only then add `--yes`.
+   Exit code 4 means you ran a remote URL without `--yes` — ask the user, never add `--yes` on your own.
+   `check` sends real requests too (a POST creates data), so the same gate applies to it.
+8. **Run.** `loadtest run <file> --out loadtests/reports/` (plus `--yes` only after confirmation).
 9. **Explain.** Read the generated `report.md` and summarize (see "Reading the report").
 
 ## Choosing auth
@@ -53,7 +56,7 @@ Request details when invoked as a command: $ARGUMENTS
 | No auth | omit `auth` |
 | User copies a token from Swagger/Postman | `bearer` |
 | Azure Functions key | `apiKey` with `header: "x-functions-key"` |
-| Entra ID protected API, user ran `az login` | `azureIdentity` (needs `scope`) |
+| Entra ID protected API, user ran `az login` | `azureIdentity` (needs `scope`; on AADSTS65001 see reference) |
 | Service client with client secret | `oauth2ClientCredentials` |
 | API has its own login endpoint | `login` |
 
@@ -73,7 +76,8 @@ Increase load only when the user asks.
 
 ## Exit codes
 
-`0` ok · `1` thresholds failed · `2` scenario invalid · `3` preflight failed (server or auth).
+`0` ok · `1` thresholds failed · `2` scenario invalid · `3` preflight failed (server or auth) ·
+`4` confirmation required for a remote URL · `130` interrupted.
 
 ## Red flags — stop
 

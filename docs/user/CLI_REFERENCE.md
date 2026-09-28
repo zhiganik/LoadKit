@@ -10,6 +10,7 @@
 |---|---|
 | `--base-url <url>` | адрес API |
 | `--auth <type>` | `none`, `bearer`, `apiKey`, `azureIdentity`, `oauth2ClientCredentials`, `login` |
+| `--source <src>` | для `azureIdentity`: `azureCli` (по умолчанию) или `default` |
 | `--scope <scope>` | для `azureIdentity` / `oauth2ClientCredentials` |
 | `--header <name>` | для `apiKey` (по умолчанию `x-functions-key`) |
 | `--no-interactive` | не задавать вопросы (автоматически, если нет терминала) |
@@ -23,6 +24,9 @@
 Preflight + по одному запросу на каждый элемент `requests[]`, показывает статус, время и начало тела ответа.
 Код выхода `0`, `2` или `3`.
 
+Запросы настоящие: POST из сценария действительно создаст запись. Для подтверждения удалённого URL
+действуют те же правила, что для `run`.
+
 ## `loadtest run <file>`
 
 | Флаг | Описание |
@@ -33,9 +37,10 @@ Preflight + по одному запросу на каждый элемент `r
 | `--duration <sec>` | переопределить `load.durationSec` |
 | `--env-file <path>` | путь к `.env` |
 | `--no-tag` | не добавлять `loadrun` в query |
-| `--yes` | не спрашивать подтверждение для не-localhost URL |
+| `--yes` | подтверждение для не-localhost URL заранее |
 
-Коды выхода: `0` ok, `1` пороги нарушены, `2` сценарий невалиден, `3` preflight не прошёл.
+Коды выхода: `0` ok, `1` пороги нарушены, `2` сценарий невалиден, `3` preflight не прошёл,
+`4` нужно подтверждение (нет терминала и нет `--yes`), `130` прервано.
 
 ## `loadtest ai install`
 

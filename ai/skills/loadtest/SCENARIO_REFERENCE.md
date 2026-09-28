@@ -7,7 +7,7 @@
 
 ```json
 {
-  "$schema": "https://loadkit.local/schemas/scenario.v1.json",
+  "$schema": "../scenario.schema.json",
   "version": 1,
   "name": "orders-smoke",
   "description": "Что проверяет сценарий",
@@ -23,7 +23,8 @@
 }
 ```
 
-`$schema` даёт автодополнение в IDE. Команда `loadtest init` подставляет корректный путь к схеме.
+`$schema` необязателен и даёт автодополнение в IDE. `loadtest init` кладёт схему в
+`loadtests/scenario.schema.json` и прописывает относительный путь.
 
 ## Корневые поля
 
@@ -81,22 +82,41 @@
 Токен получается **до старта** нагрузки и обновляется в фоне, на метрики это не влияет.
 Секреты — только `${env:ИМЯ}`; значения лежат в `loadtests/.env`.
 
+| Тип | Обязательные поля | Необязательные |
+|---|---|---|
+| `bearer` | `token` | `header` (`Authorization`), `format` (`Bearer {token}`) |
+| `apiKey` | `value` + одно из `header` / `query` | — |
+| `azureIdentity` | `scope` | `source`: `azureCli` (по умолчанию) или `default` |
+| `oauth2ClientCredentials` | `tokenUrl`, `clientId`, `clientSecret`, `scope` | — |
+| `login` | `request`, `tokenPath` | `expiresInPath`, `header` (`Authorization`), `format` (`Bearer {token}`) |
+
+`apiKey` лучше передавать заголовком: значение в `query` попадает в URL, а URL пишется в логи сервера.
+
+<!-- fragment:auth -->
 ```json
 { "type": "bearer", "token": "${env:API_TOKEN}" }
 ```
 
+<!-- fragment:auth -->
 ```json
 { "type": "apiKey", "header": "x-functions-key", "value": "${env:FUNC_KEY}" }
 ```
 
+<!-- fragment:auth -->
 ```json
 { "type": "apiKey", "query": "code", "value": "${env:FUNC_KEY}" }
 ```
 
+<!-- fragment:auth -->
 ```json
 { "type": "azureIdentity", "scope": "api://my-api/.default" }
 ```
 
+Если `check` падает с AADSTS65001 и упоминанием «Microsoft Azure CLI»: API не разрешает Azure CLI получать
+токены. Владелец app registration API добавляет client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46`
+в Expose an API → Authorized client applications.
+
+<!-- fragment:auth -->
 ```json
 {
   "type": "oauth2ClientCredentials",
@@ -107,6 +127,7 @@
 }
 ```
 
+<!-- fragment:auth -->
 ```json
 {
   "type": "login",
@@ -215,6 +236,13 @@
 }
 ```
 
+## Тестовые данные
+
+- Уникальные ключи — через `{{guid}}` / `{{seq}}`, иначе конфликты (409) исказят результат.
+- Помечайте создаваемые данные, чтобы потом удалить: `"clientRef": "loadtest-{{guid}}"`.
+- Не нагружайте endpoint'ы с побочными эффектами (письма, платежи, SMS) без заглушек или тестового режима.
+- `check` тоже отправляет настоящие запросы: один POST на каждый элемент `requests[]`.
+
 ## Частые ошибки валидации
 
 | Сообщение | Что делать |
@@ -225,3 +253,4 @@
 | `load: specify either totalRequests or durationSec` | оставить одно поле |
 | `unknown template {{uuid}}` | использовать `{{guid}}` |
 | `unknown field 'retries'` | поля нет в формате; убрать |
+| `apiKey: specify exactly one of header or query` | оставить одно |

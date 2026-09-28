@@ -20,8 +20,10 @@
 
 ## Поставка
 
-Навык вшит в инструмент (embedded resources `LoadKit.Cli/AiAssets`), поэтому его версия всегда
-совпадает с версией CLI и формата сценария.
+Навык вшит в инструмент: `LoadKit.Cli.csproj` подключает файлы `ai/skills/loadtest/**` как embedded
+resources по ссылке (`<EmbeddedResource Include="..\..\ai\skills\loadtest\**" LinkBase="AiAssets" />`).
+Копии в репозитории нет, поэтому синхронизировать нечего, а версия навыка всегда совпадает с версией
+CLI и формата сценария. Так же встраивается `schemas/scenario.schema.json` (для `init`).
 
 ```bash
 loadtest ai install                     # → ./.claude/skills/loadtest/ (Claude Code, проект)

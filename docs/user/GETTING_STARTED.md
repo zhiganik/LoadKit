@@ -20,6 +20,7 @@ loadtest init loadtests/scenarios/my-api.json
 ```
 loadtests/
   scenarios/my-api.json   ← сценарий
+  scenario.schema.json    ← автодополнение в IDE
   .env                    ← нужные переменные (пустые), в .gitignore
   reports/                ← в .gitignore
 ```
@@ -55,7 +56,11 @@ API менять не нужно. Нужно только ответить, **о
 2. `"auth": { "type": "azureIdentity", "scope": "api://my-api/.default" }`
 
 `scope` — Application ID URI API из app registration + `/.default`. Токен LoadKit получает сам
-и сам обновляет. Секретов в файлах нет. Нужно, чтобы у твоей учётки был доступ к API.
+через Azure CLI и сам обновляет. Секретов в файлах нет. Нужно, чтобы у твоей учётки был доступ к API.
+
+Частая ошибка при первом запуске — **AADSTS65001** с упоминанием «Microsoft Azure CLI». Это значит,
+что API не разрешает Azure CLI получать для себя токены. Владелец app registration API один раз добавляет
+client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46` в Expose an API → Authorized client applications.
 
 ### Остальное
 
@@ -70,12 +75,15 @@ loadtest check loadtests/scenarios/my-api.json      # по одному запр
 ```
 
 `check` показывает ответы. `200` — всё настроено. `401` — токен не тот или истёк, узнаёшь это до нагрузки.
+Запросы настоящие: если в сценарии есть POST, `check` создаст одну запись на каждый такой запрос.
 
 ## 5. Нагрузка
 
 ```bash
 loadtest run loadtests/scenarios/my-api.json --out loadtests/reports/
 ```
+
+Если `baseUrl` не localhost, LoadKit спросит подтверждение. В скриптах и CI добавь `--yes`.
 
 ## 6. Работа через AI-ассистента
 

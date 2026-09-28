@@ -24,7 +24,7 @@ flowchart LR
     subgraph Cli[LoadKit.Cli]
         CMD[Commands: init, validate, check, run, ai]
         R[Console rendering]
-        AI[AiAssets: embedded skill]
+        AI[Embedded skill + schema]
     end
     subgraph Core[LoadKit.Core]
         S[Scenarios]
@@ -62,13 +62,14 @@ flowchart TD
     I --> J{Пороги}
     J -->|ok| X0[Exit 0]
     J -->|нарушены| X1[Exit 1]
+    D -.->|не-localhost без подтверждения| X4[Exit 4]
 ```
 
 ## Структура решения
 
 ```
 src/LoadKit.Core/
-  Scenarios/   Model/, ScenarioLoader, EnvFileLoader, TemplateCompiler, ScenarioValidator
+  Scenarios/   Model/, ScenarioLoader, EnvFileLoader, TemplateCompiler, ScenarioValidator (свой, без библиотеки)
   Auth/        IAuthProvider, TokenAuthProviderBase, AuthHandler, AuthProviderFactory, Providers/, SecretMasker
   Engine/      LoadRunner, WeightedRequestPicker, RequestFactory, HttpPipelineFactory
   Metrics/     RequestResult, ResultCollector, PercentileCalculator, ThresholdEvaluator
@@ -76,7 +77,7 @@ src/LoadKit.Core/
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
   Rendering/   ProgressRenderer, SummaryRenderer, ValidationRenderer
-  AiAssets/    копия ai/skills/loadtest (embedded resources)
+  (csproj)     встраивает ai/skills/loadtest/** и schemas/ по ссылке, без копии
 samples/TargetApi, samples/scenarios
 schemas/scenario.schema.json
 ```

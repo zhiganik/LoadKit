@@ -24,13 +24,16 @@ configured, is not validated, or is unknown to user agents. Architecture: `docs/
 7. **Tests**:
    - unit: `InitializeAsync` success/failure, `ApplyAsync` sets header/query, secrets are masked;
    - for token providers: refresh before expiry, single refresh under concurrency, 401 marks token stale;
-   - integration: `samples/TargetApi` `/secure` endpoint accepts the new auth.
+   - integration: `samples/TargetApi` `/secure` accepts the new auth. If tokens come from an external
+     identity provider, add a fake issuer endpoint to TargetApi (like `/oauth2/token`) or use a fake
+     `TokenCredential`; never call real identity providers in tests.
 
 ## Rules
 
 - `ApplyAsync` is hot path: read cached value only, never await network.
 - All secret fields accept `${env:...}`; validator rejects literal secret-like values.
-- Add every new secret-carrying header/field to `SecretMasker`.
+- Add every new secret-carrying header/field to `SecretMasker` and to the `secret-literal` validation rule.
+- Static providers (no expiry) implement `MarkStale` as a counter only.
 - No retries on 401 during the run — they distort metrics.
 
 ## Common mistakes

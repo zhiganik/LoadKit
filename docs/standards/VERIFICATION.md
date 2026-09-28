@@ -34,7 +34,7 @@ GitHub Actions / Azure Pipelines на каждый PR:
 2. `dotnet format --verify-no-changes`
 3. `dotnet test` (с интеграционными)
 4. `loadtest validate samples/scenarios/*.json` собранным инструментом
-5. Проверка, что `src/LoadKit.Cli/AiAssets` совпадает с `ai/skills/loadtest` (скрипт сравнения)
+5. Тест, что собранный `LoadKit.Cli` содержит все файлы `ai/skills/loadtest/**` и схему
 
 ## Pre-commit (опционально)
 

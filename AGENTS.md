@@ -39,7 +39,7 @@ AGENTS.md, CLAUDE.md, README.md
 src/
   LoadKit.Core/          # scenarios, auth, engine, metrics, reporting — no console I/O
   LoadKit.Cli/           # commands, console rendering, DI; packs as dotnet tool
-    AiAssets/            # embedded copy of ai/skills/loadtest (build step)
+                         # embeds ai/skills/loadtest/** and schemas/ by link (no copy)
 samples/
   TargetApi/             # local API with /fast /slow /fail /dep /secure for tests and demos
   scenarios/             # example scenarios (validated in CI)
@@ -74,7 +74,7 @@ docs/                    # see docs/README.md
 
 - .NET 10 (LTS), C# latest, nullable enabled, warnings as errors
 - `Spectre.Console` / `Spectre.Console.Cli` — commands and output
-- `System.Text.Json`, JSON Schema validation library (MIT)
+- `System.Text.Json`; own `ScenarioValidator` (no JSON Schema library; the schema file is for IDEs only)
 - `Azure.Identity` — `azureIdentity` auth
 - xUnit for tests
 
@@ -85,7 +85,8 @@ docs/                    # see docs/README.md
 - Hot path (request loop): no locks, no LINQ, no string parsing, no network calls for tokens.
 - Secrets: only via `${env:...}` / `.env`. Never log, print or put secrets into reports.
 - Dependencies: MIT / Apache-2.0 / BSD only. Check the license before adding a package.
-  Known exclusions: NBomber v5+, FluentAssertions v8+ (commercial licenses).
+  Known exclusions: NBomber v5+, FluentAssertions v8+, Newtonsoft.Json.Schema, JsonSchema.Net
+  (commercial licenses, usage quotas or maintenance-fee EULAs).
 - **Contract sync:** any change to the scenario format updates, in one PR: schema, model, validator,
   `ai/skills/loadtest/SCENARIO_REFERENCE.md`, sample scenarios, tests. Use skill `changing-scenario-format`.
 - **Reuse before duplicate:** search `Core` for existing helpers (template parsing, env substitution,
