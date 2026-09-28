@@ -88,8 +88,12 @@ Exit codes: `0` ok, `1` thresholds violated, `2` scenario invalid, `3` preflight
 | (none) | `./.claude/skills/loadtest/` |
 | `--global` | `~/.claude/skills/loadtest/` |
 | `--dir <path>` | `<path>/loadtest/` |
-| `--agents-md` | additionally a block in `./AGENTS.md` |
+| `--agents-md` | additionally a block in `./AGENTS.md` (between `<!-- loadkit:start/end -->`, replaced on reinstall) |
+
+`--global` and `--dir` cannot be combined. Prints `created` / `updated` / `unchanged` for each file. Exit code `0`.
 
 ## `loadtest ai status`
 
-Shows where the skill is installed and whether its version matches the tool version.
+Shows where the skill is installed (project `./.claude/skills/loadtest/` and global `~/.claude/skills/loadtest/`),
+whether each copy is up to date, older or newer than the tool, and whether `AGENTS.md` has the LoadKit block.
+Exit code `0`. `validate` also prints `warning (skill-outdated)` when an installed copy is older than the tool.

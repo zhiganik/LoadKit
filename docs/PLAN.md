@@ -104,8 +104,10 @@ and `/api/fail` errors are counted as expected or unexpected according to `expec
 
 ## Phase 5. AI integration — 1 day
 
-- [ ] `ai/skills/loadtest/**` is embedded into `LoadKit.Cli` via a link from the `.csproj` (no copy in the repository).
-- [ ] `ai install` (`--global`, `--dir`, `--agents-md`), `ai status`, skill version warning.
+- [x] `ai/skills/loadtest/**` is embedded into `LoadKit.Cli` via a link from the `.csproj` (no copy in the repository).
+- [x] `ai install` (`--global`, `--dir`, `--agents-md`), `ai status`, skill version warning (`ai status` and `validate`).
+- [x] Skill reviewed against the implemented CLI; closed: `check` exits 0 on unexpected statuses (the skill now says to read
+  `UNEXPECTED` lines), preflight `hint:` lines, `init` flags, report warnings, `skill-outdated`.
 - [ ] Skill check with an agent in a clean folder (TargetApi running):
   - without the skill — record what the agent does wrong (baseline);
   - with the skill — "load /api/fast", "with a token via login", "on staging", "50 concurrent";

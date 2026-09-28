@@ -82,7 +82,8 @@ src/LoadKit.Core/
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
   Rendering/   ConsoleFactory (plain output when redirected), ProgressTaskReporter, RunSummaryRenderer, ValidationRenderer
-  (csproj)     embeds schemas/scenario.schema.json (and, from phase 5, ai/skills/loadtest/**) by link, without a copy
+  Ai/          SkillAssets, SkillInstaller, SkillVersion, AgentsMdBlock (ai install / ai status)
+  (csproj)     embeds schemas/scenario.schema.json and ai/skills/loadtest/** by link, without a copy
 samples/TargetApi, samples/scenarios
 schemas/scenario.schema.json, schemas/report.schema.json
 ```

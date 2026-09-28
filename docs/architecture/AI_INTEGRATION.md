@@ -21,7 +21,9 @@ the `/loadtest` command and is invoked by the model automatically based on its `
 ## Distribution
 
 The skill is built into the tool: `LoadKit.Cli.csproj` includes the `ai/skills/loadtest/**` files as embedded
-resources by link (`<EmbeddedResource Include="..\..\ai\skills\loadtest\**" LinkBase="AiAssets" />`).
+resources by link, named `LoadKit.AiAssets/loadtest/<relative path>` so the folder structure survives.
+Code: `src/LoadKit.Cli/Ai/` (`SkillAssets`, `SkillInstaller`, `SkillVersion`, `AgentsMdBlock`). It lives in the CLI,
+not Core: it distributes the CLI's own files and has nothing to do with load testing.
 There is no copy in the repository, so there is nothing to sync, and the skill version always matches the
 CLI and scenario format versions. `schemas/scenario.schema.json` is embedded the same way (for `init`).
 
@@ -33,6 +35,9 @@ loadtest ai install --agents-md         # + a short block in the project's AGENT
 loadtest ai status                      # installed skill version vs tool version
 ```
 
+`ai install` overwrites the files of the `loadtest/` folder with the tool's version (files the user added there are
+kept) and prints `created` / `updated` / `unchanged` per file; running it again is safe.
+
 `--agents-md` is a universal fallback: it adds a block to the project's `AGENTS.md` between the
 `<!-- loadkit:start -->` / `<!-- loadkit:end -->` markers with a link to the skill and the three main rules
 (scenarios only, secrets via `.env`, confirmation for remote URLs). Running it again
@@ -43,7 +48,9 @@ Paths for other AI tools are checked against their documentation; LoadKit does n
 ## Versioning
 
 `metadata` in `SKILL.md` contains `loadkit-version` and `scenario-format-version`.
-- `ai status` and `validate` warn if the installed skill is older than the tool.
+- `ai status` and `validate` warn if the installed skill is older than the tool. Only major.minor is compared
+  (`Version` in `Directory.Build.props` vs `loadkit-version`); a test fails when the two drift apart.
+  `validate` prints `warning (skill-outdated)` and keeps its exit code; the skill tells agents to pass it on.
 - A breaking format change → bump `scenario-format-version` (skill `changing-scenario-format`).
 
 ## Usage example
