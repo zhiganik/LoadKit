@@ -4,8 +4,10 @@
 
 ## Files
 
-`Engine/`: `LoadRunner`, `WeightedRequestPicker`, `RequestFactory`, `HttpPipelineFactory`.
-`Metrics/`: `RequestResult`, `ResultCollector`, `PercentileCalculator`, `HistogramBuilder`, `ThresholdEvaluator`.
+`Engine/`: `LoadRunner` (public entry) and `LoadRun` (state of one run, the worker loop), `WeightedRequestPicker`,
+`RequestFactory`, `HttpPipelineFactory`, `RunOptions`, `RunProgress`, `RunResult`, `RunIdGenerator`.
+`Metrics/`: `RequestResult`, `ResultCollector`, `ErrorSampleCollector`, `PercentileCalculator`,
+`RunStatisticsCalculator`, `ThresholdEvaluator`; `HistogramBuilder` comes with reports (phase 4).
 
 ## Load model
 
@@ -20,7 +22,10 @@ This means "N requests in flight", not "N requests per second". The open model i
   `totalRequests` is reached or `durationSec` has elapsed.
 - The first `warmup` numbers are sent but not included in metrics.
 - Request selection: prefix sums of weights + binary search.
+- `RequestFactory` prepares everything constant once (literal URLs and bodies, escaped query names, header placement);
+  per request it only renders templates. With `tagRuns`, `loadrun=<id>` is appended to every URL.
 - `Ctrl+C` → cancellation; the report is built from the collected data and marked "interrupted".
+  Requests in flight at that moment are dropped, not counted as errors.
 - Progress: `IProgress<RunProgress>` every 250 ms (sent, errors, current RPS).
 
 ## Measurement
@@ -36,11 +41,16 @@ readonly record struct RequestResult(
     int RequestIndex, int StatusCode, long ElapsedTicks, ErrorKind Error);
 ```
 
+`RequestIndex` is the index in the scenario `requests[]`; `StatusCode` is `0` when there was no response;
+`ElapsedTicks` are `Stopwatch` ticks.
+
 - `totalRequests` known → the array is preallocated, lock-free write by request number.
 - `durationSec` → each worker has its own `List<RequestResult>`, merged at the end.
-- Sample error response bodies: up to 5 per status code, up to 2 KB each.
+- Sample errors: up to 5 per status code and `ErrorKind`, masked by `SecretMasker`. For an unexpected status —
+  the first 2 KB of the body (captured only while the group has free slots); without a response — the exception message.
 
-`ErrorKind`: `None`, `UnexpectedStatus`, `SlowResponse`, `Timeout`, `Connection`, `Tls`, `Other`.
+`ErrorKind`: `None`, `UnexpectedStatus` (status not in `expect.status`), `SlowResponse` (expected status, slower than
+`expect.maxMs`), `Timeout`, `Connection`, `Tls`, `Other`.
 
 ## Percentiles
 
@@ -51,6 +61,8 @@ The rank is computed **in integers**: `rank = (P × N + 99) / 100` for integer P
 `0.95 × 2000` may give `1900.0000000000002`, and `ceil` returns 1901 — one request too far.
 
 - Computed per scenario request and for all requests together.
+- Latency uses only requests that received a response: a timeout or a refused connection has no response time.
+  They still count in the request count and the error rate.
 - Percentiles are not averaged across groups; the total is computed from all raw data.
 - RPS = number of counted requests / main run duration.
 
@@ -58,6 +70,7 @@ The rank is computed **in integers**: `rank = (P × N + 99) / 100` for integer P
 
 `ThresholdEvaluator` compares the overall p50/p95/p99 and the error rate with `thresholds`.
 The result is a list of checks (threshold, actual, ok/fail) for the report and the exit code.
+A value equal to the limit passes. A latency threshold with no responses at all fails (actual "n/a").
 
 ## Accuracy limits
 

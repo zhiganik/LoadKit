@@ -13,8 +13,10 @@ and attaches the same headers to requests. The module's job:
 
 ## Files
 
-`src/LoadKit.Core/Auth/`: `IAuthProvider`, `TokenAuthProviderBase`, `AuthHandler`,
-`AuthProviderFactory`, `AuthOptionsParser`, `SecretMasker`, `Providers/*`.
+`src/LoadKit.Core/Auth/`: `IAuthProvider`, `TokenAuthProviderBase`, `AuthHandler`, `AuthRequestOptions`,
+`AuthProviderFactory`, `SecretMasker`, `Providers/*`.
+Auth options are records in `Scenarios/Model/` (`BearerAuth`, `ApiKeyAuth`, ...), described in
+`Scenarios/Validation/ScenarioFormat.cs` and bound by `ScenarioBinder`.
 
 ## Contracts
 
@@ -96,9 +98,11 @@ sequenceDiagram
 
 ## Security
 
-- `SecretMasker` masks the `Authorization`, `x-functions-key`, `Cookie`, `api-key`,
-  `x-api-key` headers, the query parameter from `apiKey.query`, and all values substituted from `${env:}`
-  into `auth.*`. Masking applies to the console, reports and logs.
+- `SecretMasker` masks the `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `x-functions-key`,
+  `api-key`, `x-api-key` headers and the custom `auth.header`; the credential values of `auth.*` (token, key,
+  client secret, every login request value) and of sensitive headers in `headers`, both as is and URL-encoded
+  (this covers the `apiKey.query` value in URLs). Values shorter than 4 characters are not masked.
+  Masking applies to the console, reports and logs.
 - `check` shows the server response, but not the secrets sent.
 - A secret written directly in JSON is a `secret-literal` validation error (checked before env substitution).
 

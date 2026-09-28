@@ -52,14 +52,18 @@ all documentation examples pass.
 
 ## Phase 2. Engine, metrics, `run` — 1 day
 
-- [ ] `HttpPipelineFactory`, `LoadRunner`, `WeightedRequestPicker`, `RequestFactory`.
-- [ ] `ResultCollector`; `PercentileCalculator` with **integer** rank arithmetic
+- [x] `HttpPipelineFactory`, `LoadRunner`, `WeightedRequestPicker`, `RequestFactory`.
+- [x] `ResultCollector`; `PercentileCalculator` with **integer** rank arithmetic
   (tests: N=2000 → p95 = 1900th, p99 = 1980th; N=1; identical values).
-- [ ] `ThresholdEvaluator`, exit codes 0/1.
-- [ ] Auth: `IAuthProvider`, `AuthHandler`, `bearer`, `apiKey` (header and query), `SecretMasker`.
-- [ ] `run`: live progress, summary table per request and overall, status codes, sample errors.
-- [ ] Non-localhost URL: in a terminal, ask; without a terminal and without `--yes`, exit 4 with a hint.
-- [ ] `Ctrl+C` → report on the collected data, marked "interrupted", exit 130.
+- [x] `ThresholdEvaluator`, exit codes 0/1.
+- [x] Auth: `IAuthProvider`, `AuthHandler`, `bearer`, `apiKey` (header and query), `SecretMasker`.
+  Other auth types exit 3 ("not supported by run yet") until phase 3.
+- [x] `run`: live progress, summary table per request and overall, status codes, sample errors.
+  Flags `--env-file`, `--concurrency`, `--total`, `--duration`, `--no-tag`, `--yes`; `--out` moves to phase 4.
+  The `loadrun` query tag (`tagRuns`) is already applied.
+- [x] Non-localhost URL: in a terminal, ask; without a terminal and without `--yes`, exit 4 with a hint.
+- [x] `Ctrl+C` → report on the collected data, marked "interrupted", exit 130.
+  (Unit-tested through cancellation; a real Ctrl+C in a terminal still needs a manual check.)
 
 **Done when:** `run samples/scenarios/mix.json` against TargetApi shows p50/p95/p99,
 and `/api/fail` errors are counted as expected or unexpected according to `expect.status`.
@@ -81,8 +85,8 @@ and `/api/fail` errors are counted as expected or unexpected according to `expec
 
 ## Phase 4. Reports and `init` — 0.5 day
 
-- [ ] `RunReport`, `report.md`, `report.json`, KQL by `loadrun`.
-- [ ] `tagRuns`, warnings: frequent 401s, interruption, tester CPU > 85% (can move to v2).
+- [ ] `RunReport`, `report.md`, `report.json`, KQL by `loadrun`; `run --out`.
+- [ ] `tagRuns` in the report (the query tag itself is done in phase 2), warnings: frequent 401s, interruption, tester CPU > 85% (can move to v2).
 - [ ] Histogram (can move to v2).
 - [ ] `init`: interactive in a terminal, via flags without a terminal; creates the scenario, `loadtests/.env` with empty
   variables, copies `loadtests/scenario.schema.json`, appends to `.gitignore`.

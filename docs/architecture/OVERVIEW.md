@@ -63,6 +63,7 @@ flowchart TD
     J -->|ok| X0[Exit 0]
     J -->|violated| X1[Exit 1]
     D -.->|non-localhost without confirmation| X4[Exit 4]
+    G -.->|Ctrl+C: partial results| X130[Exit 130]
 ```
 
 ## Solution structure
@@ -72,12 +73,12 @@ src/LoadKit.Core/
   Scenarios/   ScenarioLoader, EnvFileLoader, ScenarioValidator (own, no library), ScenarioCompiler,
                Model/, Validation/ (format spec + rules), Templates/ (TemplateCompiler, generators)
   Auth/        IAuthProvider, TokenAuthProviderBase, AuthHandler, AuthProviderFactory, Providers/, SecretMasker
-  Engine/      LoadRunner, WeightedRequestPicker, RequestFactory, HttpPipelineFactory
-  Metrics/     RequestResult, ResultCollector, PercentileCalculator, ThresholdEvaluator
+  Engine/      LoadRunner (+ LoadRun, one run's state), WeightedRequestPicker, RequestFactory, HttpPipelineFactory
+  Metrics/     RequestResult, ResultCollector, PercentileCalculator, RunStatisticsCalculator, ThresholdEvaluator
   Reporting/   RunReport, MarkdownReportWriter, JsonReportWriter
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
-  Rendering/   ConsoleFactory (plain output when redirected), ProgressRenderer, SummaryRenderer, ValidationRenderer
+  Rendering/   ConsoleFactory (plain output when redirected), ProgressTaskReporter, RunSummaryRenderer, ValidationRenderer
   (csproj)     embeds ai/skills/loadtest/** and schemas/ by link, without a copy
 samples/TargetApi, samples/scenarios
 schemas/scenario.schema.json

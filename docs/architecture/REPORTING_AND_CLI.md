@@ -18,7 +18,7 @@
 
 | Format | Writer | Purpose |
 |---|---|---|
-| Console | `Cli/Rendering/SummaryRenderer` | right after the run |
+| Console | `Cli/Rendering/RunSummaryRenderer` | right after the run; Markdown tables when output is redirected |
 | `report.md` | `MarkdownReportWriter` | reading, PRs, AI analysis |
 | `report.json` | `JsonReportWriter` | machine processing, run comparison; the schema is a contract |
 

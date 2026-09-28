@@ -46,6 +46,14 @@ confirmation rules apply as for `run`.
 | `--no-tag` | do not add `loadrun` to the query string |
 | `--yes` | confirm a non-localhost URL in advance |
 
+`--total` or `--duration` replaces the load mode of the scenario; passing both is an error (exit `2`).
+`--out` and report files arrive with reports (see `docs/PLAN.md`, phase 4); until then `run` prints the summary only.
+
+Output: live progress in a terminal, then tables per request and overall (count, errors, RPS, min/mean/p50/p95/p99/max),
+status codes, errors by kind, sample errors and threshold checks. When output is redirected, there is no live
+progress and the tables are Markdown. The first `Ctrl+C` stops the run and prints the partial results (exit `130`);
+a second one terminates immediately.
+
 Exit codes: `0` ok, `1` thresholds violated, `2` scenario invalid, `3` preflight failed,
 `4` confirmation required (no terminal and no `--yes`), `130` interrupted.
 

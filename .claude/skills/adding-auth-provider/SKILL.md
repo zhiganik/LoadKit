@@ -15,7 +15,8 @@ configured, is not validated, or is unknown to user agents. Architecture: `docs/
 1. **Provider** in `src/LoadKit.Core/Auth/Providers/<Name>AuthProvider.cs`
    - Static credentials → implement `IAuthProvider` directly.
    - Expiring tokens → inherit `TokenAuthProviderBase`, implement only `AcquireTokenAsync`.
-2. **Config model** `<Name>AuthOptions` (record) + mapping in `AuthOptionsParser`.
+2. **Config model** `<Name>Auth : AuthOptions` record in `Scenarios/Model/`, its fields in
+   `Scenarios/Validation/ScenarioFormat.cs` (`AuthTypes`), binding in `ScenarioBinder`.
 3. **Registration** in `AuthProviderFactory`: `"<type>" → provider`.
 4. **Schema**: new `oneOf` branch for `auth` in `schemas/scenario.schema.json`.
 5. **User docs**: example in `ai/skills/loadtest/SCENARIO_REFERENCE.md` (Authentication) and a row
