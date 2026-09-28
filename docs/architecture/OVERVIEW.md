@@ -69,14 +69,15 @@ flowchart TD
 
 ```
 src/LoadKit.Core/
-  Scenarios/   Model/, ScenarioLoader, EnvFileLoader, TemplateCompiler, ScenarioValidator (own, no library)
+  Scenarios/   ScenarioLoader, EnvFileLoader, ScenarioValidator (own, no library), ScenarioCompiler,
+               Model/, Validation/ (format spec + rules), Templates/ (TemplateCompiler, generators)
   Auth/        IAuthProvider, TokenAuthProviderBase, AuthHandler, AuthProviderFactory, Providers/, SecretMasker
   Engine/      LoadRunner, WeightedRequestPicker, RequestFactory, HttpPipelineFactory
   Metrics/     RequestResult, ResultCollector, PercentileCalculator, ThresholdEvaluator
   Reporting/   RunReport, MarkdownReportWriter, JsonReportWriter
 src/LoadKit.Cli/
   Commands/    InitCommand, ValidateCommand, CheckCommand, RunCommand, AiInstallCommand, AiStatusCommand
-  Rendering/   ProgressRenderer, SummaryRenderer, ValidationRenderer
+  Rendering/   ConsoleFactory (plain output when redirected), ProgressRenderer, SummaryRenderer, ValidationRenderer
   (csproj)     embeds ai/skills/loadtest/** and schemas/ by link, without a copy
 samples/TargetApi, samples/scenarios
 schemas/scenario.schema.json

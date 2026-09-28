@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/scenario.schema.json",
   "version": 1,
   "name": "secure-login",
   "description": "Token from TargetApi /auth/login; the 10 s lifetime exercises background refresh",

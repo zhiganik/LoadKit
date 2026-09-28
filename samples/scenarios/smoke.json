@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/scenario.schema.json",
   "version": 1,
   "name": "smoke",
   "description": "Minimal check that TargetApi responds quickly",

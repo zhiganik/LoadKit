@@ -248,9 +248,13 @@ Expected 500s are listed in `expect`, so the report shows only unexpected errors
 | Message | What to do |
 |---|---|
 | `requests[i].body is required for POST` | add `body` or `"allowEmptyBody": true` |
-| `env variable API_TOKEN is not set` | add the variable to `loadtests/.env` |
+| `env variable API_TOKEN is not set` | add the variable to `loadtests/.env` (an empty value counts as not set) |
 | `secret-like value found in auth.token` | replace the value with `${env:...}` |
 | `load: specify either totalRequests or durationSec` | keep only one field |
 | `unknown template {{uuid}}` | use `{{guid}}` |
 | `unknown field 'retries'` | the field is not in the format; remove it |
 | `apiKey: specify exactly one of header or query` | keep only one |
+| `requests[i]: use either body or bodyRaw, not both` | keep only one |
+| `requests[i].path must start with '/'` | paths are relative to `baseUrl`: `"/api/orders"` |
+
+Every error names a code (for example `body-required`) and a JSON path; `loadtest validate` prints a hint for each.

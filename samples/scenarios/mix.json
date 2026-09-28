@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/scenario.schema.json",
   "version": 1,
   "name": "mix",
   "description": "Weighted mix of fast, slow, dependency and failing endpoints; 500 from /api/fail is expected",

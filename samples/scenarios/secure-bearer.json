@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/scenario.schema.json",
   "version": 1,
   "name": "secure-bearer",
   "description": "Static bearer token from .env; TargetApi accepts its dev token",

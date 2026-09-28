@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LoadKit scenario",
+  "description": "LoadKit load test scenario, format version 1. Used for IDE autocompletion only; `loadtest validate` is the source of truth. Reference: ai/skills/loadtest/SCENARIO_REFERENCE.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "name", "baseUrl", "load", "requests"],
+  "properties": {
+    "$schema": { "type": "string", "description": "Path to this schema, for IDE autocompletion." },
+    "version": { "const": 1, "description": "Scenario format version." },
+    "name": { "type": "string", "minLength": 1, "description": "Scenario name, shown in the report." },
+    "description": { "type": "string", "description": "What the scenario checks." },
+    "baseUrl": { "type": "string", "description": "API address, e.g. http://localhost:5080. Supports ${env:NAME}." },
+    "headers": { "$ref": "#/$defs/stringMap", "description": "Headers for all requests." },
+    "auth": { "$ref": "#/$defs/auth" },
+    "tagRuns": { "type": "boolean", "default": true, "description": "Add loadrun=<id> to the query string for filtering in Application Insights." },
+    "load": { "$ref": "#/$defs/load" },
+    "requests": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/request" } },
+    "thresholds": { "$ref": "#/$defs/thresholds" }
+  },
+  "$defs": {
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "scalarMap": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "httpMethod": {
+      "type": "string",
+      "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concurrency"],
+      "description": "Specify exactly one of totalRequests and durationSec.",
+      "properties": {
+        "concurrency": { "type": "integer", "minimum": 1, "description": "Requests in flight at the same time (not requests per second)." },
+        "totalRequests": { "type": "integer", "minimum": 1, "description": "Total number of requests." },
+        "durationSec": { "type": "integer", "minimum": 1, "description": "Run duration in seconds." },
+        "warmup": { "type": "integer", "minimum": 0, "default": 0, "description": "First N requests are not counted in metrics." },
+        "timeoutMs": { "type": "integer", "minimum": 1, "default": 30000, "description": "Timeout of a single request." }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "method", "path", "expect"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "description": "Unique name, shown in the report." },
+        "method": { "$ref": "#/$defs/httpMethod" },
+        "path": { "type": "string", "pattern": "^/", "description": "Path relative to baseUrl; templates allowed." },
+        "weight": { "type": "integer", "minimum": 1, "default": 1, "description": "Share in the request mix." },
+        "headers": { "$ref": "#/$defs/stringMap", "description": "Added to the root headers." },
+        "query": { "$ref": "#/$defs/scalarMap", "description": "Query parameters." },
+        "body": { "type": "object", "description": "JSON body; required for POST/PUT/PATCH unless allowEmptyBody." },
+        "bodyRaw": { "type": "string", "description": "Body as a string instead of body." },
+        "contentType": { "type": "string", "default": "application/json", "description": "Content type of the body." },
+        "allowEmptyBody": { "type": "boolean", "default": false, "description": "Allow POST/PUT/PATCH without a body." },
+        "auth": { "type": "boolean", "default": true, "description": "false sends the request without auth." },
+        "expect": { "$ref": "#/$defs/expect" }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 100, "maximum": 599 },
+          "description": "Allowed status codes, e.g. [200]."
+        },
+        "maxMs": { "type": "integer", "minimum": 1, "description": "A slower response counts as an error." }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "p50Ms": { "type": "integer", "minimum": 1 },
+        "p95Ms": { "type": "integer", "minimum": 1 },
+        "p99Ms": { "type": "integer", "minimum": 1 },
+        "errorRatePercent": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["bearer", "apiKey", "azureIdentity", "oauth2ClientCredentials", "login"] }
+      },
+      "oneOf": [
+        { "$ref": "#/$defs/bearerAuth" },
+        { "$ref": "#/$defs/apiKeyAuth" },
+        { "$ref": "#/$defs/azureIdentityAuth" },
+        { "$ref": "#/$defs/oauth2ClientCredentialsAuth" },
+        { "$ref": "#/$defs/loginAuth" }
+      ]
+    },
+    "bearerAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "token"],
+      "properties": {
+        "type": { "const": "bearer" },
+        "token": { "type": "string", "description": "Use ${env:NAME}; never a literal token." },
+        "header": { "type": "string", "default": "Authorization" },
+        "format": { "type": "string", "default": "Bearer {token}" }
+      }
+    },
+    "apiKeyAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value"],
+      "description": "Specify exactly one of header and query; header is recommended.",
+      "properties": {
+        "type": { "const": "apiKey" },
+        "value": { "type": "string", "description": "Use ${env:NAME}; never a literal key." },
+        "header": { "type": "string", "examples": ["x-functions-key"] },
+        "query": { "type": "string", "examples": ["code"] }
+      }
+    },
+    "azureIdentityAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "scope"],
+      "properties": {
+        "type": { "const": "azureIdentity" },
+        "scope": { "type": "string", "examples": ["api://my-api/.default"] },
+        "source": { "enum": ["azureCli", "default"], "default": "azureCli" }
+      }
+    },
+    "oauth2ClientCredentialsAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tokenUrl", "clientId", "clientSecret", "scope"],
+      "properties": {
+        "type": { "const": "oauth2ClientCredentials" },
+        "tokenUrl": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientSecret": { "type": "string", "description": "Use ${env:NAME}; never a literal secret." },
+        "scope": { "type": "string" }
+      }
+    },
+    "loginAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "request", "tokenPath"],
+      "properties": {
+        "type": { "const": "login" },
+        "request": { "$ref": "#/$defs/loginRequest" },
+        "tokenPath": { "type": "string", "examples": ["$.accessToken"] },
+        "expiresInPath": { "type": "string", "examples": ["$.expiresIn"] },
+        "header": { "type": "string", "default": "Authorization" },
+        "format": { "type": "string", "default": "Bearer {token}" }
+      }
+    },
+    "loginRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "path"],
+      "properties": {
+        "method": { "$ref": "#/$defs/httpMethod" },
+        "path": { "type": "string", "pattern": "^/" },
+        "headers": { "$ref": "#/$defs/stringMap" },
+        "query": { "$ref": "#/$defs/scalarMap" },
+        "body": { "type": "object", "description": "Credentials must use ${env:NAME}." },
+        "bodyRaw": { "type": "string" },
+        "contentType": { "type": "string", "default": "application/json" }
+      }
+    }
+  }
+}

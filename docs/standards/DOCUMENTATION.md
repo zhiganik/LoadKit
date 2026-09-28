@@ -54,7 +54,8 @@ A new document is added to the `docs/README.md` index in the same PR.
 
 ## Verifiable examples
 
-JSON blocks in `SCENARIO_REFERENCE.md` and `docs/user/*` are checked by `Category=Docs` tests:
+` ```json ` blocks in `README.md`, `SCENARIO_REFERENCE.md` and `docs/user/*`, and every `samples/scenarios/*.json`
+(with `samples/scenarios/.env.example`), are checked by `Category=Docs` tests (`tests/LoadKit.Core.Tests/Docs`):
 - a block without a marker is a full scenario;
 - `<!-- fragment:auth -->` before a block means an `auth` object, checked as a fragment;
 - `<!-- no-validate -->` means not checked (use as a last resort, with a reason next to it).
