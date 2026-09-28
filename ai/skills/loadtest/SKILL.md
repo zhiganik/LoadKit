@@ -29,7 +29,10 @@ Request details when invoked as a command: $ARGUMENTS
     reports/               # gitignored
     .env                   # gitignored, secrets
   ```
-  If `loadtests/` is missing: `loadtest init loadtests/scenarios/<name>.json --base-url <url> --auth <type>`.
+  If `loadtests/` is missing: `loadtest init loadtests/scenarios/<name>.json --base-url <url> --auth <type>`
+  (`--scope <scope>` is required for `azureIdentity` and `oauth2ClientCredentials`; `--header <name>` for `apiKey`).
+  It creates the layout above, `.env` with empty variables and `.gitignore` entries, and prints the next steps.
+- If any command prints `warning (skill-outdated)`, tell the user to run `loadtest ai install` to update this skill.
 
 ## Workflow
 
@@ -41,13 +44,15 @@ Request details when invoked as a command: $ARGUMENTS
 4. **Validate.** `loadtest validate <file>`. Fix every reported error, repeat until clean.
 5. **Secrets.** If validate reports a missing variable, ask the user to add it to `loadtests/.env`.
    Never ask the user to paste a secret into chat. Never read or print `.env`.
-6. **Check.** `loadtest check <file>`. Any unexpected status (especially 401/403/404) → stop and report.
+6. **Check.** `loadtest check <file>`. It exits `0` even when a status is unexpected, so read the output:
+   any `UNEXPECTED` line (especially 401/403/404) → stop and report it; do not run load. Exit `3` means preflight
+   failed: follow the printed `hint:` line (API not running, wrong credentials, `az login`, scope).
 7. **Safety gate.** If `baseUrl` is not `localhost`/`127.0.0.1`, show URL, concurrency and
    total/duration and wait for explicit user confirmation. Only then add `--yes`.
    Exit code 4 means you ran a remote URL without `--yes` — ask the user, never add `--yes` on your own.
    `check` sends real requests too (a POST creates data), so the same gate applies to it.
 8. **Run.** `loadtest run <file> --out loadtests/reports/` (plus `--yes` only after confirmation).
-9. **Explain.** Read the generated `report.md` and summarize (see "Reading the report").
+9. **Explain.** `run` prints `Report: <path>/report.md`. Read that file and summarize (see "Reading the report").
 
 ## Choosing auth
 
@@ -67,7 +72,9 @@ Increase load only when the user asks.
 
 ## Reading the report
 
-- Lead with: RPS, p50 / p95 / p99, error rate, thresholds verdict (exit code).
+- Lead with: RPS, p50 / p95 / p99, error rate, thresholds verdict (the `Result` row; exit code `1` = failed).
+- Mention every item of the `## Warnings` section: `interrupted`, `unauthorized-responses`, `token-refresh-failed`,
+  `tester-cpu` (the load machine was the bottleneck — numbers are pessimistic), `few-requests` (p99 unreliable).
 - p99 ≥ 10× p50 → unstable tail (cold start, GC, locks, slow dependency).
 - All percentiles grow together → saturation (CPU, DB, too few instances).
 - Many `Timeout`/`Connection` errors → server overloaded or the load machine is the bottleneck.
