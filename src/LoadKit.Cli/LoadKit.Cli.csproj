@@ -14,9 +14,18 @@
     <PackageReference Include="Spectre.Console.Cli" />
   </ItemGroup>
 
-  <!-- Embedded by link, no copy in the repository: init writes it to loadtests/scenario.schema.json. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="LoadKit.IntegrationTests" />
+  </ItemGroup>
+
+  <!--
+    Embedded by link, no copies in the repository (ADR-003):
+    - the scenario schema, written by init to loadtests/scenario.schema.json;
+    - the user-facing skill, written by ai install. Resource names keep the relative path: LoadKit.AiAssets/loadtest/<path>.
+  -->
   <ItemGroup>
     <EmbeddedResource Include="..\..\schemas\scenario.schema.json" Link="Assets\scenario.schema.json" LogicalName="LoadKit.Assets.scenario.schema.json" />
+    <EmbeddedResource Include="..\..\ai\skills\loadtest\**\*" LinkBase="AiAssets\loadtest" LogicalName="LoadKit.AiAssets/loadtest/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

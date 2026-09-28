@@ -24,6 +24,17 @@ app.Configure(config =>
         .WithDescription("Run the load described by a scenario and print percentiles, status codes and errors.")
         .WithExample("run", "loadtests/scenarios/my-api.json")
         .WithExample("run", "loadtests/scenarios/my-api.json", "--concurrency", "20", "--duration", "60");
+
+    config.AddBranch("ai", ai =>
+    {
+        ai.SetDescription("Install the loadtest skill for AI assistants and check its version.");
+        ai.AddCommand<AiInstallCommand>("install")
+            .WithDescription("Install the loadtest skill (default: ./.claude/skills/loadtest/).")
+            .WithExample("ai", "install")
+            .WithExample("ai", "install", "--global");
+        ai.AddCommand<AiStatusCommand>("status")
+            .WithDescription("Show where the skill is installed and whether its version matches the tool.");
+    });
 });
 
 return await app.RunAsync(args);

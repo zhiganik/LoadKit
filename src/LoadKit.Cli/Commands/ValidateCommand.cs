@@ -22,7 +22,9 @@ internal sealed class ValidateCommand : AsyncCommand<ValidateCommand.Settings>
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
         var result = await new ScenarioLoader().LoadAsync(settings.ScenarioFile, settings.EnvFile, CancellationToken.None);
-        ValidationRenderer.Render(ConsoleFactory.Create(), settings.ScenarioFile, result);
+        var console = ConsoleFactory.Create();
+        ValidationRenderer.Render(console, settings.ScenarioFile, result);
+        SkillVersionWarning.RenderIfOutdated(console);
         return result.IsValid ? ExitCodes.Success : ExitCodes.InvalidScenario;
     }
 }
