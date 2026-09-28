@@ -83,6 +83,7 @@ internal sealed class LoadRun
     public async Task<RunResult> ExecuteAsync(CancellationToken cancellationToken)
     {
         var startedAt = _timeProvider.GetUtcNow();
+        var startProcessorTime = TryGetProcessorTime();
         _runStartTimestamp = Stopwatch.GetTimestamp();
         _lastProgressTimestamp = _runStartTimestamp;
 
@@ -109,7 +110,31 @@ internal sealed class LoadRun
             ReportProgress();
         }
 
-        return BuildResult(startedAt, endTimestamp, cancellationToken.IsCancellationRequested);
+        var testerCpuPercent = CalculateCpuPercent(startProcessorTime, TryGetProcessorTime(), Stopwatch.GetElapsedTime(_runStartTimestamp, endTimestamp));
+        return BuildResult(startedAt, endTimestamp, cancellationToken.IsCancellationRequested, testerCpuPercent);
+    }
+
+    private static TimeSpan? TryGetProcessorTime()
+    {
+        try
+        {
+            using var process = Process.GetCurrentProcess();
+            return process.TotalProcessorTime;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or NotSupportedException or PlatformNotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    private static double? CalculateCpuPercent(TimeSpan? startProcessorTime, TimeSpan? endProcessorTime, TimeSpan elapsed)
+    {
+        if (startProcessorTime is not { } start || endProcessorTime is not { } end || elapsed <= TimeSpan.Zero)
+        {
+            return null;
+        }
+
+        return (end - start).TotalMilliseconds * 100 / (elapsed.TotalMilliseconds * Environment.ProcessorCount);
     }
 
     private async Task RunWorkerAsync(int workerIndex, CancellationToken runToken)
@@ -293,7 +318,7 @@ internal sealed class LoadRun
             _options.Duration));
     }
 
-    private RunResult BuildResult(DateTimeOffset startedAt, long endTimestamp, bool interrupted)
+    private RunResult BuildResult(DateTimeOffset startedAt, long endTimestamp, bool interrupted, double? testerCpuPercent)
     {
         var results = _results.ToArray();
         var measuredStartTimestamp = Interlocked.Read(ref _measuredStartTimestamp);
@@ -309,6 +334,7 @@ internal sealed class LoadRun
             statistics,
             ThresholdEvaluator.Evaluate(_scenario.Scenario.Thresholds, statistics.Overall),
             _errorSamples.ToList(),
-            results);
+            results,
+            testerCpuPercent);
     }
 }

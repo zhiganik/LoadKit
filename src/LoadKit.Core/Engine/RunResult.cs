@@ -7,6 +7,7 @@ namespace LoadKit.Core.Engine;
 /// <param name="Interrupted">The run was cancelled (Ctrl+C); metrics cover only the collected data.</param>
 /// <param name="Results">Raw measured results.</param>
 /// <param name="ErrorSamples">Up to 5 samples per status code and error kind, masked.</param>
+/// <param name="TesterCpuPercent">Average CPU of this process over the run, as a share of all cores; null if unknown.</param>
 public sealed record RunResult(
     string ScenarioName,
     RunOptions Options,
@@ -16,7 +17,8 @@ public sealed record RunResult(
     RunStatistics Statistics,
     IReadOnlyList<ThresholdCheck> ThresholdChecks,
     IReadOnlyList<ErrorSample> ErrorSamples,
-    IReadOnlyList<RequestResult> Results)
+    IReadOnlyList<RequestResult> Results,
+    double? TesterCpuPercent)
 {
     public bool ThresholdsPassed => ThresholdEvaluator.AllPassed(ThresholdChecks);
 }
