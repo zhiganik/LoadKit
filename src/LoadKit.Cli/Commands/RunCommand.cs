@@ -2,6 +2,7 @@ using System.ComponentModel;
 using LoadKit.Cli.Rendering;
 using LoadKit.Core.Auth;
 using LoadKit.Core.Engine;
+using LoadKit.Core.Reporting;
 using LoadKit.Core.Scenarios;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -9,7 +10,7 @@ using Spectre.Console.Cli;
 namespace LoadKit.Cli.Commands;
 
 /// <summary>
-/// <c>loadtest run &lt;file&gt;</c>: validate, confirm a remote URL, acquire credentials, run the load, print the summary.
+/// <c>loadtest run &lt;file&gt;</c>: validate, confirm a remote URL, acquire credentials, run the load, print the summary, write reports with --out.
 /// Exit codes: 0 ok, 1 thresholds failed, 2 invalid scenario, 3 preflight failed, 4 confirmation required, 130 interrupted.
 /// </summary>
 internal sealed class RunCommand : AsyncCommand<RunCommand.Settings>
@@ -35,6 +36,10 @@ internal sealed class RunCommand : AsyncCommand<RunCommand.Settings>
         [CommandOption("--duration <sec>")]
         [Description("Override load.durationSec (replaces totalRequests).")]
         public int? DurationSec { get; init; }
+
+        [CommandOption("--out <dir>")]
+        [Description("Folder for report.md and report.json (a subfolder per run).")]
+        public string? OutDirectory { get; init; }
 
         [CommandOption("--no-tag")]
         [Description("Do not add loadrun=<id> to the query string.")]
@@ -92,8 +97,14 @@ internal sealed class RunCommand : AsyncCommand<RunCommand.Settings>
                 $"Running [bold]{Markup.Escape(scenario.Name)}[/] against {Markup.Escape(maskedBaseUrl)}: {RunPlanText.Describe(options)}{tag}");
 
             var result = await RunUntilDoneOrCancelledAsync(console, runner, compiledScenario, options);
-            RunSummaryRenderer.Render(console, result, usesAuth: scenario.Auth is not null);
-            RenderTokenRefreshFailures(console, authProvider);
+            var report = RunReportBuilder.Build(compiledScenario, result, ToolInfo.Version, secretMasker, authProvider);
+            RunSummaryRenderer.Render(console, report);
+            if (settings.OutDirectory is { } outDirectory)
+            {
+                var reportFolder = await ReportFileWriter.WriteAsync(report, outDirectory, CancellationToken.None);
+                var markdownPath = Path.GetRelativePath(Directory.GetCurrentDirectory(), Path.Combine(reportFolder, ReportFileWriter.MarkdownFileName));
+                console.MarkupLine($"Report: {Markup.Escape(markdownPath)} (and {ReportFileWriter.JsonFileName} next to it)");
+            }
 
             if (result.Interrupted)
             {
@@ -108,16 +119,6 @@ internal sealed class RunCommand : AsyncCommand<RunCommand.Settings>
     {
         // remote-url info is replaced by the confirmation step.
         return issue.Severity != ValidationSeverity.Info;
-    }
-
-    private static void RenderTokenRefreshFailures(IAnsiConsole console, IAuthProvider? authProvider)
-    {
-        if (authProvider is TokenAuthProviderBase { RefreshFailureCount: > 0 } tokenProvider)
-        {
-            console.MarkupLine(
-                $"[yellow]warning:[/] token refresh failed {tokenProvider.RefreshFailureCount} time(s); last error: "
-                + Markup.Escape(tokenProvider.LastRefreshError ?? "unknown"));
-        }
     }
 
     /// <summary>First Ctrl+C stops the run and keeps the collected data; a second one terminates the process.</summary>

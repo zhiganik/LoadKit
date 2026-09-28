@@ -14,4 +14,9 @@
     <PackageReference Include="Spectre.Console.Cli" />
   </ItemGroup>
 
+  <!-- Embedded by link, no copy in the repository: init writes it to loadtests/scenario.schema.json. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\schemas\scenario.schema.json" Link="Assets\scenario.schema.json" LogicalName="LoadKit.Assets.scenario.schema.json" />
+  </ItemGroup>
+
 </Project>

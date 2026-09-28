@@ -7,10 +7,12 @@ internal static class CliRunner
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
 
-    public static async Task<CliResult> RunAsync(IEnumerable<string> arguments, CancellationToken cancellationToken)
+    /// <param name="workingDirectory">Null: the test process's directory.</param>
+    public static async Task<CliResult> RunAsync(IEnumerable<string> arguments, CancellationToken cancellationToken, string? workingDirectory = null)
     {
         var startInfo = new ProcessStartInfo("dotnet")
         {
+            WorkingDirectory = workingDirectory ?? string.Empty,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,

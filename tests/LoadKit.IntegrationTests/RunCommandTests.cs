@@ -107,7 +107,7 @@ public sealed class RunCommandTests(TargetApiFixture targetApi) : IClassFixture<
         Assert.DoesNotContain("wrong-api-key", result.StandardOutput, StringComparison.Ordinal);
         if (expectedExitCode == ExitThresholdsFailed)
         {
-            Assert.Contains("unexpected 401 responses", result.StandardOutput, StringComparison.Ordinal);
+            Assert.Contains("warning (unauthorized-responses): 20 responses were an unexpected 401", result.StandardOutput, StringComparison.Ordinal);
         }
     }
 
@@ -227,6 +227,38 @@ public sealed class RunCommandTests(TargetApiFixture targetApi) : IClassFixture<
 
         Assert.True(result.ExitCode == ExitPreflightFailed, result.ToString());
         Assert.Contains("preflight failed baseUrl: http://127.0.0.1:1 is not reachable", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Out_WritesMarkdownAndJsonReports_WithoutSecrets()
+    {
+        File.WriteAllText(Path.Combine(_directory, ".env"), $"LOADKIT_IT_TOKEN={DevToken}\n");
+        var scenarioPath = WriteScenario("report.json", $$"""
+            {
+              "version": 1, "name": "report-demo", "baseUrl": "{{BaseUrl}}",
+              "auth": { "type": "bearer", "token": "${env:LOADKIT_IT_TOKEN}" },
+              "load": { "concurrency": 2, "totalRequests": 30 },
+              "requests": [ { "name": "secure", "method": "GET", "path": "/secure", "expect": { "status": [200] } } ],
+              "thresholds": { "errorRatePercent": 0 }
+            }
+            """);
+        var outDirectory = Path.Combine(_directory, "reports");
+
+        var result = await RunAsync(scenarioPath, "--out", outDirectory);
+
+        Assert.True(result.ExitCode == ExitSuccess, result.ToString());
+        var reportFolder = Assert.Single(Directory.GetDirectories(outDirectory));
+        Assert.EndsWith("-report-demo", reportFolder, StringComparison.Ordinal);
+        Assert.Contains("Report: ", result.StandardOutput, StringComparison.Ordinal);
+        var markdown = File.ReadAllText(Path.Combine(reportFolder, "report.md"));
+        var json = File.ReadAllText(Path.Combine(reportFolder, "report.json"));
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        var runId = document.RootElement.GetProperty("run").GetProperty("runId").GetString();
+        Assert.Contains($"loadrun={runId}", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains($"| where url contains \"loadrun={runId}\"", markdown, StringComparison.Ordinal);
+        Assert.Equal(30, document.RootElement.GetProperty("overall").GetProperty("count").GetInt32());
+        Assert.True(document.RootElement.GetProperty("thresholdsPassed").GetBoolean());
+        Assert.DoesNotContain(DevToken, markdown + json, StringComparison.Ordinal);
     }
 
     public void Dispose()

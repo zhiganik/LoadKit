@@ -1,3 +1,4 @@
+using LoadKit.Cli;
 using LoadKit.Cli.Commands;
 using Spectre.Console.Cli;
 
@@ -5,6 +6,11 @@ var app = new CommandApp();
 app.Configure(config =>
 {
     config.SetApplicationName("loadtest");
+    config.SetApplicationVersion(ToolInfo.Version);
+
+    config.AddCommand<InitCommand>("init")
+        .WithDescription("Create a scenario, a .env template and .gitignore entries.")
+        .WithExample("init", "loadtests/scenarios/my-api.json", "--base-url", "http://localhost:5000", "--auth", "bearer");
 
     config.AddCommand<ValidateCommand>("validate")
         .WithDescription("Check a scenario file and its variables without sending requests.")
