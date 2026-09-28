@@ -25,8 +25,13 @@ internal static class ConsoleFactory
             Ansi = AnsiSupport.No,
             ColorSystem = ColorSystemSupport.NoColors,
             Interactive = InteractionSupport.No,
+
+            // Spectre's CI enrichers (GitHub Actions, Azure Pipelines, ...) would switch ANSI back on:
+            // markup such as [bold] then becomes escape codes inside the text that scripts and agents parse.
+            Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
         });
         console.Profile.Width = RedirectedOutputWidth;
+        console.Profile.Capabilities.Ansi = false;
         return console;
     }
 }

@@ -8,7 +8,12 @@ internal static class CliRunner
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
 
     /// <param name="workingDirectory">Null: the test process's directory.</param>
-    public static async Task<CliResult> RunAsync(IEnumerable<string> arguments, CancellationToken cancellationToken, string? workingDirectory = null)
+    /// <param name="environment">Extra environment variables for the CLI process.</param>
+    public static async Task<CliResult> RunAsync(
+        IEnumerable<string> arguments,
+        CancellationToken cancellationToken,
+        string? workingDirectory = null,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         var startInfo = new ProcessStartInfo("dotnet")
         {
@@ -17,6 +22,11 @@ internal static class CliRunner
             RedirectStandardError = true,
             UseShellExecute = false,
         };
+        foreach (var (name, value) in environment ?? new Dictionary<string, string>())
+        {
+            startInfo.Environment[name] = value;
+        }
+
         startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "loadtest.dll"));
         foreach (var argument in arguments)
         {
