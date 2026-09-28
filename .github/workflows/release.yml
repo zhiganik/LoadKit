@@ -1,0 +1,46 @@
+name: release
+
+# Push a tag vX.Y.Z whose version equals <Version> in Directory.Build.props.
+# Requires the repository secret NUGET_API_KEY (nuget.org API key with push rights for the LoadKit package).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Check tag matches Version
+        run: |
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match <Version>$version</Version> in Directory.Build.props"
+            exit 1
+          fi
+
+      - name: Build and test
+        run: |
+          dotnet build -c Release -warnaserror
+          dotnet test -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack src/LoadKit.Cli -c Release --no-build -o artifacts -warnaserror
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" artifacts/*.nupkg --title "LoadKit $GITHUB_REF_NAME" --generate-notes

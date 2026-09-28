@@ -5,13 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -25,10 +28,45 @@ jobs:
         run: dotnet format --no-restore --verify-no-changes
 
       - name: Test
-        run: dotnet test --no-build
+        run: dotnet test --no-build --logger trx --results-directory TestResults
+
+      # Job logs need a sign-in to read; annotations are visible on the run page and through the public API.
+      - name: Annotate failed tests
+        if: failure()
+        shell: python
+        run: |
+          import glob
+          import xml.etree.ElementTree as ElementTree
+
+          namespace = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
+          for path in glob.glob("TestResults/**/*.trx", recursive=True):
+              for result in ElementTree.parse(path).getroot().iterfind(".//t:UnitTestResult", namespace):
+                  if result.get("outcome") != "Failed":
+                      continue
+                  message = result.find(".//t:Message", namespace)
+                  text = (message.text or "").strip() if message is not None else ""
+                  text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:4000]
+                  print(f"::error title={result.get('testName')}::{text}")
 
       - name: Validate sample scenarios
         run: |
           for scenario in samples/scenarios/*.json; do
             dotnet run --project src/LoadKit.Cli --no-build -- validate "$scenario" --env-file samples/scenarios/.env.example
           done
+
+      - name: Pack tool
+        run: dotnet pack src/LoadKit.Cli -c Release -o artifacts -warnaserror
+
+      - name: Smoke-test the installed tool
+        run: |
+          dotnet tool install LoadKit --tool-path .tools --add-source artifacts
+          .tools/loadtest --version
+          .tools/loadtest validate samples/scenarios/smoke.json
+          .tools/loadtest ai install --dir "$RUNNER_TEMP/skills"
+          test -f "$RUNNER_TEMP/skills/loadtest/SKILL.md"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: loadkit-nupkg
+          path: artifacts/*.nupkg
+          if-no-files-found: error
