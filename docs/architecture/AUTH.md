@@ -21,7 +21,7 @@ Auth options are records in `Scenarios/Model/` (`BearerAuth`, `ApiKeyAuth`, ...)
 ## Contracts
 
 ```csharp
-public interface IAuthProvider
+public interface IAuthProvider : IDisposable                                                 // Dispose stops refresh
 {
     Task InitializeAsync(CancellationToken cancellationToken);                              // preflight
     ValueTask ApplyAsync(HttpRequestMessage request, CancellationToken cancellationToken);  // hot path
@@ -87,14 +87,25 @@ sequenceDiagram
     CLI->>Provider: MarkStale → out-of-band background refresh
 ```
 
-1. `AuthProviderFactory` creates a provider from `auth.type`.
-2. `InitializeAsync` in preflight acquires the first token. Failure → exit 3 with a "what to check" message.
+1. `AuthProviderFactory` creates a provider from `auth.type`. Login and token requests use a separate
+   `HttpClient` without `AuthHandler` (`HttpPipelineFactory.CreateUnauthenticated`).
+2. Preflight (`Engine/PreflightChecker`, shared by `check` and `run`): first `baseUrl` must answer with any
+   HTTP status, then `InitializeAsync` acquires the first token. Providers throw `AuthException` with a message and a
+   hint; any failure → exit 3 with a "what to check" line.
 3. During the run, `ApplyAsync` reads the token from a field (volatile read), without network calls.
-4. Background refresh is a timer at ~80% of lifetime (via `TimeProvider`).
+4. Background refresh is a timer at ~80% of lifetime (via `TimeProvider`), at least 1 s and at most 1 day ahead
+   (timers cannot wait longer). A token without a known lifetime is never refreshed by the timer.
 5. A 401 response → `MarkStale()` → out-of-band background refresh, at most once every 5 seconds.
    The request itself is not retried: retries distort metrics.
-6. `bearer` and `apiKey` cannot refresh: for them `MarkStale` only increments a counter,
-   and the report hints "token expired — update the variable".
+6. Refreshes are serialized (`SemaphoreSlim`), and each one carries the token generation it saw: if the token
+   was already replaced, it does nothing. So a timer and 50 concurrent 401s still acquire one token.
+7. A failed background refresh keeps the old token, retries after 5 s, and is reported after the run.
+8. Every acquired token is added to `SecretMasker` (`AddSecret`).
+9. `bearer` and `apiKey` cannot refresh: for them `MarkStale` only increments a counter,
+   and the summary hints "token or key may be expired or wrong — update the variable".
+
+Lifetime sources: `login` — `expiresInPath` (seconds), else the JWT `exp` claim; `oauth2ClientCredentials` —
+`expires_in`, else JWT `exp`; `azureIdentity` — `AccessToken.ExpiresOn`. Neither known → non-expiring, `check` warns.
 
 ## Security
 

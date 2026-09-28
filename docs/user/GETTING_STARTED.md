@@ -62,10 +62,30 @@ A common error on the first run is **AADSTS65001** mentioning "Microsoft Azure C
 the API does not allow Azure CLI to get tokens for it. The owner of the API's app registration adds
 client id `04b07795-8ddb-461a-bbee-02f9e1bf7b46` once under Expose an API → Authorized client applications.
 
-### Other options
+### The API has its own login endpoint
 
-Service client (`oauth2ClientCredentials`) and your own login endpoint (`login`):
-see `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
+1. `loadtests/.env`: `TEST_USER=...` and `TEST_PASSWORD=...` (a test account).
+2. In the scenario, describe the login request and where the token is in its response:
+
+<!-- fragment:auth -->
+```json
+{
+  "type": "login",
+  "request": { "method": "POST", "path": "/auth/login", "body": { "email": "${env:TEST_USER}", "password": "${env:TEST_PASSWORD}" } },
+  "tokenPath": "$.accessToken",
+  "expiresInPath": "$.expiresIn"
+}
+```
+
+LoadKit logs in before the load and again at ~80% of the token lifetime.
+
+### A service client with a client secret
+
+1. `loadtests/.env`: `CLIENT_ID=...`, `CLIENT_SECRET=...` (and `TENANT_ID=...` for Entra ID).
+2. `"auth": { "type": "oauth2ClientCredentials", "tokenUrl": "...", "clientId": "${env:CLIENT_ID}", "clientSecret": "${env:CLIENT_SECRET}", "scope": "api://my-api/.default" }`
+
+If the token is issued but the API answers 401/403, the API does not accept app-only tokens:
+it needs an app role for the client. More examples: `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
 
 ## 4. Check
 

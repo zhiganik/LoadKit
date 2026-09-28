@@ -26,6 +26,8 @@
   with 50 concurrent requests; secrets are masked in the report.
 - **Exit codes** — 0/1/2/3/4 in integration tests (4: remote URL without a terminal and without `--yes`).
 - **Tokens** — a TargetApi token with a 10 s lifetime in a 30-second run: no 401s, no p99 spike.
+  The automated test (`TokenRefreshTests`) uses the same ratio faster: 3 s tokens in an 8-second run.
+  Token refresh logic itself is unit-tested with `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`).
 
 ## TargetApi for tests
 

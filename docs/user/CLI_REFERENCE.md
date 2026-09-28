@@ -29,7 +29,19 @@ When output is redirected (CI, scripts, AI agents), all commands print plain tex
 ## `loadtest check <file>`
 
 Preflight + one request for each `requests[]` item; shows the status, time and the start of the response body.
-Exit code `0`, `2` or `3`.
+Exit code `0`, `2`, `3` or `4` (remote URL without confirmation).
+
+| Flag | Description |
+|---|---|
+| `--env-file <path>` | path to `.env` |
+| `--yes` | confirm a non-localhost URL in advance |
+
+Preflight (also the first step of `run`): `baseUrl` must answer with any HTTP status, then the first token is
+acquired. A failure prints what failed and a `hint:` line, exit `3`. A token without a known lifetime is a warning.
+
+Each request prints `ok` or `UNEXPECTED` (status not in `expect.status`), the method, URL, status and time, and
+the first 500 characters of the body (secrets masked). Unexpected statuses do not change the exit code (`0`):
+read the output before running load. `check` does not add `loadrun` to URLs.
 
 The requests are real: a POST from the scenario will actually create a record. The same remote URL
 confirmation rules apply as for `run`.

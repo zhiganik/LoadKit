@@ -70,14 +70,19 @@ and `/api/fail` errors are counted as expected or unexpected according to `expec
 
 ## Phase 3. Full auth and `check` — 1 day
 
-- [ ] `TokenAuthProviderBase`: cache, background refresh at ~80% of lifetime, `MarkStale`,
+- [x] `TokenAuthProviderBase`: cache, background refresh at ~80% of lifetime, `MarkStale`,
   a single refresh under concurrent requests.
-- [ ] `login` (against `/auth/login`), `oauth2ClientCredentials` (against TargetApi `/oauth2/token`).
-- [ ] `azureIdentity`: `AzureCliCredential` by default, `source: "default"` → `DefaultAzureCredential`.
-- [ ] Preflight: first token + `baseUrl` reachability, exit 3 with a specific hint.
-- [ ] `check` command.
-- [ ] Tests: `FakeTimeProvider` for refresh; fake `TokenCredential` for `azureIdentity`;
+- [x] `login` (against `/auth/login`), `oauth2ClientCredentials` (against TargetApi `/oauth2/token`).
+- [x] `azureIdentity`: `AzureCliCredential` by default, `source: "default"` → `DefaultAzureCredential`.
+- [x] Preflight: first token + `baseUrl` reachability, exit 3 with a specific hint.
+- [x] `check` command.
+- [x] Tests: `FakeTimeProvider` for refresh; fake `TokenCredential` for `azureIdentity`;
   a TargetApi token with a 10-second lifetime in a 30-second run → no 401s and no p99 spike.
+  (Automated as 3 s tokens in an 8 s run; the 10 s / 30 s run with `samples/scenarios/secure-login.json` was checked
+  manually: 3.8 M requests, 0 errors, p99 0.2 ms.)
+- [x] Added along the way: `tokenPath`/`expiresInPath` JSONPath syntax is validated (`invalid-value`).
+
+`azureIdentity`: verified by tests only (no Entra ID API available yet).
 
 **Done when:** `bearer`, `apiKey`, `login`, `oauth2ClientCredentials` pass against TargetApi `/secure`;
 `azureIdentity` is covered by unit tests and checked manually once against a real API
