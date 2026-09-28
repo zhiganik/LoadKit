@@ -1,6 +1,6 @@
 # Architecture overview
 
-> Status: draft
+> Status: ready
 
 ## Purpose
 

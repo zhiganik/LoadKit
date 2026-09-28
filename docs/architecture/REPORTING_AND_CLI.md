@@ -1,6 +1,6 @@
 # Reports and CLI
 
-> Status: draft. Command reference for users: `docs/user/CLI_REFERENCE.md`.
+> Status: ready. Command reference for users: `docs/user/CLI_REFERENCE.md`.
 
 ## Report
 

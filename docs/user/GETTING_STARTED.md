@@ -1,6 +1,6 @@
 # First run in 5 minutes
 
-> Status: draft
+> Status: ready
 
 ## 1. Install
 

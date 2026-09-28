@@ -1,6 +1,6 @@
 # Auth
 
-> Status: draft. Adding a type: skill `adding-auth-provider`.
+> Status: ready. Adding a type: skill `adding-auth-provider`.
 > User instructions: `docs/user/GETTING_STARTED.md`.
 
 ## Purpose

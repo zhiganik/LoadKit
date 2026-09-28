@@ -120,10 +120,14 @@ and `/api/fail` errors are counted as expected or unexpected according to `expec
 
 ## Phase 6. Packaging, release, demo — 0.5 day
 
-- [ ] `PackAsTool`, `ToolCommandName=loadtest`, `PackageId` (check uniqueness; when publishing to
-  nuget.org, use a prefix, e.g. `YourName.LoadKit`).
-- [ ] Install from a local feed, run through `GETTING_STARTED.md` from scratch.
-- [ ] Document statuses `draft` → `ready` where the code matches.
+- [x] `PackAsTool`, `ToolCommandName=loadtest`, `PackageId` (check uniqueness; when publishing to
+  nuget.org, use a prefix, e.g. `YourName.LoadKit`). `PackageId` is `LoadKit` (free on nuget.org on 2026-09-28,
+  matches the docs); `RollForward=Major`; MIT license (`LICENSE`, `PackageLicenseExpression`).
+- [x] Install from a local feed, run through `GETTING_STARTED.md` from scratch (tool installed with `--tool-path` in a new
+  git repo: init → validate → check → run --out → ai install; `.env` and reports ignored by git).
+- [x] Document statuses `draft` → `ready` where the code matches.
+- [x] CI: fixed the GitHub-only failure (Spectre.Console re-enabled ANSI on `GITHUB_ACTIONS`), added pack + tool smoke test,
+  test annotations, actions updated to Node 24 majors; `release.yml` publishes on a `vX.Y.Z` tag.
 - [ ] Demo: `/loadtest` → report → charts in Application Insights.
 
 ---

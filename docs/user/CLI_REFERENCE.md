@@ -1,6 +1,6 @@
 # Command reference
 
-> Status: draft. This is a public contract: flag changes go into the task's final report, breaking changes need an ADR.
+> Status: ready. This is a public contract: flag changes go into the task's final report, breaking changes need an ADR.
 
 ## `loadtest init <file>`
 

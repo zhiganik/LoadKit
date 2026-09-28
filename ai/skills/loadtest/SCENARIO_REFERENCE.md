@@ -1,6 +1,6 @@
 # LoadKit scenario format (version 1)
 
-> Status: draft. Reference for people and AI assistants. Working rules are in [SKILL.md](SKILL.md).
+> Status: ready. Reference for people and AI assistants. Working rules are in [SKILL.md](SKILL.md).
 > All JSON examples in this file are automatically checked by tests (`Category=Docs`).
 
 ## Structure

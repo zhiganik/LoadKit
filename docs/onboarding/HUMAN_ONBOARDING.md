@@ -1,6 +1,6 @@
 # Developer onboarding
 
-> Status: draft
+> Status: ready
 
 ## Requirements
 
@@ -23,8 +23,12 @@ dotnet run --project src/LoadKit.Cli -- run samples/scenarios/smoke.json
 
 ```bash
 dotnet pack src/LoadKit.Cli -c Release -o ./artifacts
-dotnet tool install -g LoadKit --add-source ./artifacts
+dotnet tool install -g LoadKit --add-source ./artifacts      # or --tool-path <dir> to keep it isolated
+loadtest --version
 ```
+
+Reinstall after changes: `dotnet tool update -g LoadKit --add-source ./artifacts` (bump `<Version>` in
+`Directory.Build.props` first, or uninstall and install again). Releasing: `docs/standards/VERIFICATION.md`.
 
 ## What to read
 

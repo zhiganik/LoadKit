@@ -1,6 +1,6 @@
 # AI assistant integration
 
-> Status: draft. Decision: ADR-003.
+> Status: ready. Decision: ADR-003.
 
 ## Two audiences
 

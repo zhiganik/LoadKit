@@ -1,6 +1,6 @@
 # LoadKit
 
-> Status: draft
+> Status: ready
 
 A simple CLI tool for load testing HTTP APIs during local development.
 A scenario is described in a JSON file and started with one command; the result is a report with percentiles
@@ -135,3 +135,7 @@ For other AI tools: `loadtest ai install --dir <path>` or `--agents-md`.
 | 3 | Preflight failed (server unreachable or token not obtained) |
 | 4 | Confirmation required for a non-localhost URL (no terminal and no `--yes`) |
 | 130 | Interrupted with `Ctrl+C` (a report on the collected data is still created) |
+
+## License
+
+[MIT](LICENSE).

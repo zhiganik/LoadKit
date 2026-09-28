@@ -1,6 +1,6 @@
 # Scenarios: model, loading, validation
 
-> Status: draft. User-facing format: `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
+> Status: ready. User-facing format: `ai/skills/loadtest/SCENARIO_REFERENCE.md`.
 > Format changes: skill `changing-scenario-format`.
 
 ## Files
